@@ -671,6 +671,7 @@ async function startRace(){
 
 // ── COMMENTS ─────────────────────────────────────────────────────────────
 async function postComment(inId,selId,targetUid,workoutId){
+  const msg=document.getElementById(inId)?.value.trim();
   const author=document.getElementById(selId)?.value;
   if(!msg||!author)return;
   const payload={author_name:author,message:msg};
