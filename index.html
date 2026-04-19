@@ -8,129 +8,152 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{
-  --teal:#1D9E75;--teal-light:#E1F5EE;--teal-dark:#085041;
-  --blue:#378ADD;--blue-light:#E6F1FB;--blue-dark:#185FA5;
-  --coral:#D85A30;--coral-light:#FAECE7;--coral-dark:#993C1D;
-  --purple:#7F77DD;--purple-light:#EEEDFE;--purple-dark:#534AB7;
-  --pink:#D4537E;--pink-light:#FBEAF0;--pink-dark:#993556;
-  --amber:#BA7517;--amber-light:#FAEEDA;--amber-dark:#854F0B;
-  --red:#E24B4A;--red-light:#FCEBEB;--red-dark:#A32D2D;
-  --gray:#888780;--gray-light:#F1EFE8;--gray-dark:#444441;
-  --text:#1a1a1a;--text-muted:#666;--text-hint:#999;
-  --bg:#fff;--bg2:#f7f7f5;--border:rgba(0,0,0,0.1);
+  --teal:#1D9E75;--tl:#E1F5EE;--td:#085041;
+  --blue:#378ADD;--bl:#E6F1FB;--bd:#185FA5;
+  --coral:#D85A30;--cl:#FAECE7;--cd:#993C1D;
+  --purple:#7F77DD;--pl:#EEEDFE;--pd:#534AB7;
+  --pink:#D4537E;--pkl:#FBEAF0;--pkd:#993556;
+  --amber:#BA7517;--al:#FAEEDA;--ad:#854F0B;
+  --red:#E24B4A;--rl:#FCEBEB;--rd:#A32D2D;
+  --gray:#888780;--gl:#F1EFE8;--gd:#444441;
+  --text:#1a1a1a;--tm:#666;--th:#999;
+  --bg:#fff;--bg2:#f7f7f5;--bdr:rgba(0,0,0,0.1);
   --r:12px;--rs:8px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg2);color:var(--text);max-width:430px;margin:0 auto;min-height:100vh;}
-.hdr{background:var(--bg);padding:14px 16px;border-bottom:0.5px solid var(--border);position:sticky;top:0;z-index:100;}
+.hdr{background:var(--bg);padding:14px 16px;border-bottom:0.5px solid var(--bdr);position:sticky;top:0;z-index:100;}
 .hdr h1{font-size:17px;font-weight:600;}
-.hdr .sub{font-size:12px;color:var(--text-muted);margin-top:1px;}
-.cpill{display:inline-block;background:var(--teal-light);color:var(--teal-dark);font-size:12px;font-weight:500;padding:3px 10px;border-radius:20px;margin-top:5px;}
-.nav{display:flex;background:var(--bg);border-bottom:0.5px solid var(--border);}
-.nav button{flex:1;padding:12px 4px;font-size:12px;border:none;background:transparent;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;font-weight:500;}
+.hdr .sub{font-size:12px;color:var(--tm);margin-top:1px;}
+.cpill{display:inline-block;background:var(--tl);color:var(--td);font-size:12px;font-weight:500;padding:3px 10px;border-radius:20px;margin-top:5px;}
+.nav{display:flex;background:var(--bg);border-bottom:0.5px solid var(--bdr);overflow-x:auto;}
+.nav::-webkit-scrollbar{display:none;}
+.nav button{flex:0 0 auto;padding:12px 10px;font-size:11px;border:none;background:transparent;color:var(--tm);cursor:pointer;border-bottom:2px solid transparent;font-weight:500;white-space:nowrap;}
 .nav button.active{color:var(--teal);border-bottom-color:var(--teal);}
 .page{display:none;padding:16px;}
 .page.active{display:block;}
-.slbl{font-size:11px;font-weight:600;color:var(--text-hint);text-transform:uppercase;letter-spacing:0.06em;margin:16px 0 8px;}
-.card{background:var(--bg);border-radius:var(--r);border:0.5px solid var(--border);padding:14px;margin-bottom:10px;}
+.slbl{font-size:11px;font-weight:600;color:var(--th);text-transform:uppercase;letter-spacing:0.06em;margin:16px 0 8px;}
+.card{background:var(--bg);border-radius:var(--r);border:0.5px solid var(--bdr);padding:14px;margin-bottom:10px;}
 /* runner rows */
-.rrow{background:var(--bg);border-radius:var(--r);border:0.5px solid var(--border);margin-bottom:8px;overflow:hidden;}
+.rrow{background:var(--bg);border-radius:var(--r);border:0.5px solid var(--bdr);margin-bottom:8px;overflow:hidden;}
 .rrow-top{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;}
-.rnk{font-size:16px;font-weight:600;min-width:18px;color:var(--text-hint);padding-top:10px;}
+.rnk{font-size:16px;font-weight:600;min-width:18px;color:var(--th);padding-top:10px;}
 .rnk.r1{color:#BA7517;}.rnk.r2{color:var(--gray);}.rnk.r3{color:#854F0B;}
 .rmeta{flex:1;min-width:0;}
 .rname{font-size:14px;font-weight:500;}
-.rsub{font-size:12px;color:var(--text-muted);margin-top:1px;}
-.barw{height:3px;background:var(--gray-light);border-radius:2px;margin-top:5px;overflow:hidden;}
+.rsub{font-size:12px;color:var(--tm);margin-top:1px;}
+.barw{height:3px;background:var(--gl);border-radius:2px;margin-top:5px;overflow:hidden;}
 .bar{height:3px;border-radius:2px;}
 .scol{text-align:right;padding-top:2px;}
 .sbig{font-size:22px;font-weight:600;}
-.stiny{font-size:11px;color:var(--text-muted);}
+.stiny{font-size:11px;color:var(--tm);}
 .gpill{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;margin-top:5px;}
-.gon{background:var(--teal-light);color:var(--teal-dark);}
-.goff{background:var(--red-light);color:var(--red-dark);}
-.gnone{background:var(--gray-light);color:var(--gray-dark);}
+.gon{background:var(--tl);color:var(--td);}
+.goff{background:var(--rl);color:var(--rd);}
+.gnone{background:var(--gl);color:var(--gd);}
 /* chips */
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
-.chip{padding:6px 12px;border-radius:20px;font-size:13px;border:0.5px solid var(--border);background:transparent;cursor:pointer;color:var(--text-muted);}
-.chip.active{background:var(--teal-light);color:var(--teal-dark);border-color:var(--teal);font-weight:500;}
+.chip{padding:6px 12px;border-radius:20px;font-size:13px;border:0.5px solid var(--bdr);background:transparent;cursor:pointer;color:var(--tm);}
+.chip.active{background:var(--tl);color:var(--td);border-color:var(--teal);font-weight:500;}
 /* workout cards */
-.wcard{background:var(--bg);border-radius:var(--r);border:0.5px solid var(--border);margin-bottom:8px;overflow:hidden;}
+.wcard{background:var(--bg);border-radius:var(--r);border:0.5px solid var(--bdr);margin-bottom:8px;overflow:hidden;}
 .wc-inner{padding:12px 14px;}
 .wch{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
 .wct{font-size:14px;font-weight:500;}
-.wcty{font-size:12px;color:var(--text-muted);}
-.wcr{display:flex;justify-content:space-between;font-size:13px;margin-top:3px;color:var(--text-muted);}
+.wcty{font-size:12px;color:var(--tm);}
+.wcr{display:flex;justify-content:space-between;font-size:13px;margin-top:3px;color:var(--tm);}
 .wcr span{color:var(--text);font-weight:500;}
 .tag{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;margin-top:8px;}
-.tdone{background:var(--teal-light);color:var(--teal-dark);}
-.tmiss{background:var(--red-light);color:var(--red-dark);}
-.tpart{background:var(--amber-light);color:var(--amber-dark);}
-.tplan{background:var(--gray-light);color:var(--gray-dark);}
+.tdone{background:var(--tl);color:var(--td);}
+.tmiss{background:var(--rl);color:var(--rd);}
+.tpart{background:var(--al);color:var(--ad);}
+.tplan{background:var(--gl);color:var(--gd);}
+/* edit/delete buttons on workout cards */
+.wc-actions{display:flex;gap:6px;margin-top:10px;}
+.wc-actions button{padding:5px 10px;font-size:11px;border-radius:20px;cursor:pointer;border:0.5px solid var(--bdr);background:transparent;color:var(--tm);}
+.wc-actions .edit-btn{border-color:var(--teal);color:var(--teal);}
+.wc-actions .del-btn{border-color:var(--red);color:var(--rd);}
 /* forms */
 .fg{margin-bottom:14px;}
-.fl{font-size:12px;font-weight:500;color:var(--text-muted);margin-bottom:5px;display:block;}
+.fl{font-size:12px;font-weight:500;color:var(--tm);margin-bottom:5px;display:block;}
 .fr{display:flex;gap:8px;}
-input,select,textarea{width:100%;padding:10px 12px;border:0.5px solid var(--border);border-radius:var(--rs);font-size:14px;background:var(--bg2);color:var(--text);font-family:inherit;}
+input,select,textarea{width:100%;padding:10px 12px;border:0.5px solid var(--bdr);border-radius:var(--rs);font-size:14px;background:var(--bg2);color:var(--text);font-family:inherit;}
 textarea{resize:none;}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
 .btn{width:100%;padding:13px;border-radius:var(--r);font-size:15px;font-weight:500;cursor:pointer;border:none;}
 .btnp{background:var(--teal);color:white;}.btnp:active{opacity:0.85;}
-.btng{background:transparent;border:0.5px dashed var(--border);color:var(--text-muted);}
+.btng{background:transparent;border:0.5px dashed var(--bdr);color:var(--tm);}
+.btnd{background:transparent;border:0.5px solid var(--rd);color:var(--rd);}
 /* verdicts */
 .verd{padding:14px;border-radius:var(--r);margin-top:12px;}
-.vgood{background:var(--teal-light);}.vbad{background:var(--red-light);}
+.vgood{background:var(--tl);}.vbad{background:var(--rl);}
 .vtitle{font-size:15px;font-weight:600;}
-.vgood .vtitle{color:var(--teal-dark);}.vbad .vtitle{color:var(--red-dark);}
+.vgood .vtitle{color:var(--td);}.vbad .vtitle{color:var(--rd);}
 .vbody{font-size:13px;margin-top:4px;}
-.vgood .vbody{color:var(--teal);}.vbad .vbody{color:var(--red-dark);}
+.vgood .vbody{color:var(--teal);}.vbad .vbody{color:var(--rd);}
 .rr{display:flex;gap:10px;align-items:center;}
 .rr input[type=range]{flex:1;accent-color:var(--teal);}
 /* modal */
-.movl{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:flex-end;}
+.movl{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;}
 .movl.open{display:flex;}
 .modal{background:var(--bg);border-radius:20px 20px 0 0;padding:20px 16px 40px;width:100%;max-height:90vh;overflow-y:auto;}
-.mhdl{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px;}
+.mhdl{width:36px;height:4px;background:var(--bdr);border-radius:2px;margin:0 auto 16px;}
 .mtitle{font-size:17px;font-weight:600;margin-bottom:16px;}
 /* toast */
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:white;padding:10px 20px;border-radius:20px;font-size:13px;z-index:300;opacity:0;transition:opacity 0.2s;pointer-events:none;}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:white;padding:10px 20px;border-radius:20px;font-size:13px;z-index:300;opacity:0;transition:opacity 0.2s;pointer-events:none;white-space:nowrap;}
 .toast.show{opacity:1;}
-.empty{text-align:center;padding:40px 20px;color:var(--text-muted);font-size:14px;}
-.loading{text-align:center;padding:30px;color:var(--text-muted);font-size:14px;}
+.empty{text-align:center;padding:40px 20px;color:var(--tm);font-size:14px;}
+.loading{text-align:center;padding:30px;color:var(--tm);font-size:14px;}
 .arr{display:flex;gap:8px;margin-top:8px;}
 .arr input{flex:1;}
 .arr button{padding:10px 16px;background:var(--teal);color:white;border:none;border-radius:var(--rs);font-size:14px;cursor:pointer;white-space:nowrap;}
 /* comments */
-.csec{padding:0 14px 12px;border-top:0.5px solid var(--border);}
+.csec{padding:0 14px 12px;border-top:0.5px solid var(--bdr);}
 .citem{display:flex;gap:8px;margin-top:8px;align-items:flex-start;}
 .cbubble{background:var(--bg2);border-radius:0 10px 10px 10px;padding:7px 10px;flex:1;}
-.cauthor{font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:2px;}
+.cauthor{font-size:11px;font-weight:600;color:var(--tm);margin-bottom:2px;}
 .cmsg{font-size:13px;color:var(--text);}
 .cinrow{display:flex;gap:6px;margin-top:8px;align-items:center;}
 .cinrow select{width:auto;min-width:90px;padding:7px 8px;font-size:12px;flex-shrink:0;}
 .cinrow input{flex:1;padding:7px 10px;font-size:13px;}
 .cinrow button{padding:7px 12px;background:var(--teal);color:white;border:none;border-radius:var(--rs);font-size:13px;cursor:pointer;flex-shrink:0;}
+/* race canvas */
+#race-canvas{width:100%;border-radius:var(--r);display:block;}
+/* score explanation */
+.score-box{background:var(--bg);border-radius:var(--r);border:0.5px solid var(--bdr);padding:16px;margin-bottom:12px;}
+.score-box h3{font-size:15px;font-weight:600;margin-bottom:8px;color:var(--td);}
+.score-box p{font-size:13px;color:var(--tm);line-height:1.6;margin-bottom:8px;}
+.score-box .formula{background:var(--tl);border-radius:var(--rs);padding:10px 14px;font-size:13px;font-weight:500;color:var(--td);margin:8px 0;}
+.score-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--bdr);font-size:13px;}
+.score-row:last-child{border-bottom:none;}
+.score-row .lbl{color:var(--tm);}
+.score-row .val{font-weight:600;color:var(--text);}
+.example-tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;margin-left:6px;}
+/* manage tab */
+.manage-filter{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
+.manage-filter select{flex:1;min-width:120px;}
 </style>
 </head>
 <body>
 
 <div class="hdr">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-    <div>
-      <h1>Berlin Marathon 2026</h1>
-      <div class="sub">Track your crew's progress</div>
-    </div>
+    <div><h1>Berlin Marathon 2026</h1><div class="sub">Track your crew's progress</div></div>
     <div class="cpill" id="countdown">... days</div>
   </div>
 </div>
 
 <div class="nav">
   <button class="active" onclick="showPage('board',this)">Board</button>
+  <button onclick="showPage('race',this)">Race</button>
   <button onclick="showPage('training',this)">Training</button>
+  <button onclick="showPage('manage',this)">Manage</button>
   <button onclick="showPage('log',this)">Log</button>
   <button onclick="showPage('goal',this)">Goal</button>
+  <button onclick="showPage('scoring',this)">Scoring</button>
 </div>
 
+<!-- BOARD -->
 <div id="board" class="page active">
   <div class="slbl">Adherence leaderboard</div>
   <div id="leaderboard"><div class="loading">Loading...</div></div>
@@ -141,6 +164,14 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
   </div>
 </div>
 
+<!-- RACE -->
+<div id="race" class="page">
+  <div class="slbl">Live race — ranked by score</div>
+  <canvas id="race-canvas" height="500"></canvas>
+  <div style="margin-top:10px;font-size:12px;color:var(--tm);text-align:center">Score determines position on the track. Updated live.</div>
+</div>
+
+<!-- TRAINING -->
 <div id="training" class="page">
   <div class="slbl">Viewing schedule for</div>
   <div class="chips" id="training-chips"></div>
@@ -149,6 +180,23 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
   <div id="per-runner-upload" style="margin-top:12px"></div>
 </div>
 
+<!-- MANAGE -->
+<div id="manage" class="page">
+  <div class="slbl">Edit or delete workouts</div>
+  <div class="manage-filter">
+    <select id="manage-runner" onchange="loadManage()"></select>
+    <select id="manage-status" onchange="loadManage()">
+      <option value="">All statuses</option>
+      <option value="planned">Planned</option>
+      <option value="done">Done</option>
+      <option value="partial">Partial</option>
+      <option value="missed">Missed</option>
+    </select>
+  </div>
+  <div id="manage-content"><div class="loading">Select a runner above</div></div>
+</div>
+
+<!-- LOG -->
 <div id="log" class="page">
   <div class="slbl">Log a completed workout</div>
   <div class="card">
@@ -175,6 +223,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
   <div id="recent-logs"><div class="loading">Loading...</div></div>
 </div>
 
+<!-- GOAL -->
 <div id="goal" class="page">
   <div class="slbl">Goal calculator</div>
   <div class="card">
@@ -182,13 +231,13 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
     <div class="fg"><label class="fl">Target finish time</label>
       <div class="fr">
         <input type="number" id="goal-h" placeholder="3" min="2" max="7" style="max-width:80px" oninput="calcGoal()">
-        <span style="line-height:42px;color:var(--text-muted);font-size:13px">h</span>
+        <span style="line-height:42px;color:var(--tm);font-size:13px">h</span>
         <input type="number" id="goal-m" placeholder="45" min="0" max="59" style="max-width:80px" oninput="calcGoal()">
-        <span style="line-height:42px;color:var(--text-muted);font-size:13px">min</span>
+        <span style="line-height:42px;color:var(--tm);font-size:13px">min</span>
       </div>
     </div>
     <div class="fg"><label class="fl">Current weekly km: <span id="km-out" style="font-weight:600;color:var(--text)">50</span></label>
-      <div class="rr"><input type="range" min="10" max="120" value="50" id="weekly-km" step="1" oninput="document.getElementById('km-out').textContent=this.value;calcGoal()"><span style="color:var(--text-muted);font-size:12px">km/w</span></div>
+      <div class="rr"><input type="range" min="10" max="120" value="50" id="weekly-km" step="1" oninput="document.getElementById('km-out').textContent=this.value;calcGoal()"><span style="color:var(--tm);font-size:12px">km/w</span></div>
     </div>
     <div class="fg"><label class="fl">Longest recent run: <span id="lr-out" style="font-weight:600;color:var(--text)">18</span> km</label>
       <div class="rr"><input type="range" min="5" max="38" value="18" id="long-run" step="1" oninput="document.getElementById('lr-out').textContent=this.value;calcGoal()"></div>
@@ -198,11 +247,58 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
   </div>
 </div>
 
-<!-- Add Workout Modal -->
-<div class="movl" id="add-workout-modal" onclick="closeModal(event)">
+<!-- SCORING -->
+<div id="scoring" class="page">
+  <div class="slbl">How your score is calculated</div>
+
+  <div class="score-box">
+    <h3>The idea</h3>
+    <p>The leaderboard does not reward who runs the most. It rewards who follows their own plan most consistently. Someone doing 30km/week perfectly beats someone doing 80km/week sloppily.</p>
+  </div>
+
+  <div class="score-box">
+    <h3>Step 1 — Session compliance score</h3>
+    <p>Every time you log a completed workout, it is compared to what you planned for that day.</p>
+    <div class="formula">Compliance = (actual km ÷ planned km) × 100, capped at 100</div>
+    <div class="score-row"><span class="lbl">Planned 10km, ran 10.5km</span><span class="val">100 pts <span class="example-tag tdone">Done</span></span></div>
+    <div class="score-row"><span class="lbl">Planned 10km, ran 8km</span><span class="val">80 pts <span class="example-tag tpart">Partial</span></span></div>
+    <div class="score-row"><span class="lbl">Planned 10km, ran 6km</span><span class="val">60 pts <span class="example-tag tpart">Partial</span></span></div>
+    <div class="score-row"><span class="lbl">Session completely missed</span><span class="val">0 pts <span class="example-tag tmiss">Missed</span></span></div>
+    <div class="score-row"><span class="lbl">No planned session, logged anyway</span><span class="val">100 pts <span class="example-tag tdone">Done</span></span></div>
+    <p style="margin-top:8px">Sessions below 70% compliance are marked as Partial. Sessions you skip entirely are Missed.</p>
+  </div>
+
+  <div class="score-box">
+    <h3>Step 2 — Overall score</h3>
+    <p>Your leaderboard score combines two things:</p>
+    <div class="formula">Score = (avg compliance × 60%) + (sessions completed rate × 40%)</div>
+    <div class="score-row"><span class="lbl">Average compliance</span><span class="val">60% weight</span></div>
+    <div class="score-row"><span class="lbl">Sessions completed ÷ sessions due</span><span class="val">40% weight</span></div>
+    <p style="margin-top:8px">Example: you completed 8 of 10 sessions (80%) with an average compliance of 95%. Score = (95 × 0.6) + (80 × 0.4) = <strong>89</strong>.</p>
+  </div>
+
+  <div class="score-box">
+    <h3>Goal prediction</h3>
+    <p>The green or red pill under your name on the leaderboard estimates if your current training volume is sufficient to hit your target time. It looks at your recent weekly km and longest run, then compares them to benchmarks for your goal pace.</p>
+    <div class="score-row"><span class="lbl">Sub 3:30</span><span class="val">70+ km/w, 32km long run</span></div>
+    <div class="score-row"><span class="lbl">Sub 3:45</span><span class="val">55+ km/w, 28km long run</span></div>
+    <div class="score-row"><span class="lbl">Sub 4:00</span><span class="val">45+ km/w, 25km long run</span></div>
+    <div class="score-row"><span class="lbl">Sub 4:30</span><span class="val">35+ km/w, 22km long run</span></div>
+    <p style="margin-top:8px">The prediction updates automatically every time you log a run. 15% tolerance is applied — you do not need to hit the exact number.</p>
+  </div>
+
+  <div class="score-box">
+    <h3>Race view</h3>
+    <p>The Race tab shows everyone as animated runners on a track. Position left to right reflects your current score. The gap between runners is proportional — a 10-point lead looks like a 10-point lead.</p>
+  </div>
+</div>
+
+<!-- Add/Edit Workout Modal -->
+<div class="movl" id="workout-modal" onclick="closeModal(event)">
   <div class="modal">
     <div class="mhdl"></div>
-    <div class="mtitle">Add planned workout</div>
+    <div class="mtitle" id="modal-title">Add planned workout</div>
+    <input type="hidden" id="edit-workout-id">
     <div class="fg"><label class="fl">Runner</label><select id="plan-runner"></select></div>
     <div class="fg"><label class="fl">Date</label><input type="date" id="plan-date"></div>
     <div class="fg"><label class="fl">Workout type</label>
@@ -213,7 +309,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
     </div>
     <div class="fg"><label class="fl">Planned distance (km)</label><input type="number" id="plan-km" placeholder="15" step="0.5" min="0"></div>
     <div class="fg"><label class="fl">Target pace (min/km)</label><input type="text" id="plan-pace" placeholder="5:30"></div>
-    <button class="btn btnp" onclick="savePlan()">Add to schedule</button>
+    <button class="btn btnp" onclick="saveWorkoutPlan()">Save</button>
+    <button class="btn btnd" id="delete-btn" style="margin-top:8px;display:none" onclick="deleteWorkout()">Delete this workout</button>
   </div>
 </div>
 
@@ -223,129 +320,54 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
 const SB_URL='https://zcamktlipterhpuiupsj.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjYW1rdGxpcHRlcmhwdWl1cHNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1OTgwNzUsImV4cCI6MjA5MjE3NDA3NX0.gHvM1bbVRmT9ufJO82_yXiNquU4xpEyRd9Mcy94nCRw';
 const sb=supabase.createClient(SB_URL,SB_KEY);
-let users=[],selectedUser=null;
+let users=[],selectedUser=null,raceAnim=null,raceScores=[];
 const MDATE=new Date('2026-09-27');
 
 // ── CARICATURES ──────────────────────────────────────────────────────────
 function caricature(name,sz=42){
-  const n=(name||'').toLowerCase();
-  const skin='#FDDBB4';
-
+  const n=(name||'').toLowerCase();const skin='#FDDBB4';
   function base(hair,eyes,extras=''){
-    const eyeL=eyes||`<ellipse cx="17" cy="20.5" rx="1.5" ry="1.8" fill="#1a1a1a"/><ellipse cx="25" cy="20.5" rx="1.5" ry="1.8" fill="#1a1a1a"/><ellipse cx="17.4" cy="20" rx="0.6" ry="0.6" fill="white"/><ellipse cx="25.4" cy="20" rx="0.6" ry="0.6" fill="white"/>`;
-    return `<svg width="${sz}" height="${sz}" viewBox="0 0 42 42" xmlns="http://www.w3.org/2000/svg">
-<circle cx="21" cy="21" r="21" fill="#e8e8e8"/>
-<ellipse cx="21" cy="27" rx="11" ry="9" fill="${skin}"/>
-<ellipse cx="21" cy="19" rx="10" ry="11" fill="${skin}"/>
-${hair}${eyeL}
-<ellipse cx="21" cy="24" rx="1.1" ry="0.7" fill="#c8a090"/>
-${extras}
-</svg>`;
+    const ey=eyes||`<ellipse cx="17" cy="20.5" rx="1.5" ry="1.8" fill="#1a1a1a"/><ellipse cx="25" cy="20.5" rx="1.5" ry="1.8" fill="#1a1a1a"/><ellipse cx="17.4" cy="20" rx="0.6" ry="0.6" fill="white"/><ellipse cx="25.4" cy="20" rx="0.6" ry="0.6" fill="white"/>`;
+    return `<svg width="${sz}" height="${sz}" viewBox="0 0 42 42" xmlns="http://www.w3.org/2000/svg"><circle cx="21" cy="21" r="21" fill="#e8e8e8"/><ellipse cx="21" cy="27" rx="11" ry="9" fill="${skin}"/><ellipse cx="21" cy="19" rx="10" ry="11" fill="${skin}"/>${hair}${ey}<ellipse cx="21" cy="24" rx="1.1" ry="0.7" fill="#c8a090"/>${extras}</svg>`;
   }
-
-  // SERRANITO — white skin, black medium-length hair
-  if(n.includes('serranito')){
-    return base(
-      `<ellipse cx="21" cy="11" rx="10" ry="7" fill="#1a1a1a"/>
-       <rect x="11" y="11" width="20" height="6" fill="#1a1a1a"/>
-       <ellipse cx="15" cy="17" rx="2" ry="4" fill="#1a1a1a"/>
-       <ellipse cx="27" cy="17" rx="2" ry="4" fill="#1a1a1a"/>`,''
-    );
-  }
-
-  // BUTA — buzz cut, nose strip, blue eyes, very serious (flat mouth)
-  if(n.includes('buta')){
-    const blueEyes=`<ellipse cx="17" cy="20.5" rx="1.5" ry="1.8" fill="#4A90D9"/><ellipse cx="25" cy="20.5" rx="1.5" ry="1.8" fill="#4A90D9"/><ellipse cx="17.4" cy="20" rx="0.6" ry="0.6" fill="white"/><ellipse cx="25.4" cy="20" rx="0.6" ry="0.6" fill="white"/>`;
-    return base(
-      `<ellipse cx="21" cy="11" rx="10" ry="4" fill="#333"/>
-       <rect x="11" y="11" width="20" height="2.5" fill="#333"/>`,
-      blueEyes,
-      `<rect x="18.5" y="22" width="5" height="1.5" rx="0.7" fill="#d4a0a0"/>
-       <line x1="17" y1="26" x2="25" y2="26" stroke="#b09080" stroke-width="1.2" stroke-linecap="round"/>
-       <line x1="14" y1="19.5" x2="28" y2="19.5" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round"/>`
-    );
-  }
-
-  // PINK — young Justin Bieber: side-swept blond hair, white skin
-  if(n.includes('pink')){
-    return base(
-      `<ellipse cx="21" cy="11" rx="10.5" ry="7" fill="#D4AA30"/>
-       <path d="M10 15 Q12 8 21 9 Q30 8 32 14" fill="#D4AA30" stroke="none"/>
-       <path d="M10 15 Q9 17 10 21" stroke="#C8A020" stroke-width="4" fill="none" stroke-linecap="round"/>
-       <path d="M10.5 13 Q13 9 21 9.5" stroke="#E0B830" stroke-width="2.5" fill="none" stroke-linecap="round"/>`,''
-    );
-  }
-
-  // RICHI TRENITALIA — short dark hair, sport sunglasses
-  if(n.includes('richi')){
-    const shades=`<rect x="12" y="18" width="18" height="5.5" rx="2.5" fill="#111" opacity="0.9"/>
-      <rect x="12.5" y="18.5" width="7.5" height="4.5" rx="2" fill="#1a6090" opacity="0.75"/>
-      <rect x="22" y="18.5" width="7.5" height="4.5" rx="2" fill="#1a6090" opacity="0.75"/>
-      <rect x="20" y="19.5" width="2" height="2.5" rx="0.5" fill="#111"/>
-      <line x1="12" y1="20.5" x2="9.5" y2="21" stroke="#111" stroke-width="1.2" stroke-linecap="round"/>
-      <line x1="30" y1="20.5" x2="32.5" y2="21" stroke="#111" stroke-width="1.2" stroke-linecap="round"/>`;
-    return base(
-      `<ellipse cx="21" cy="12" rx="10" ry="5.5" fill="#3a2510"/>
-       <rect x="11" y="12" width="20" height="3" fill="#3a2510"/>`,
-      shades
-    );
-  }
-
-  // MAMBRO — hair band, sport sunglasses, big smile, brown hair
-  if(n.includes('mambro')){
-    const shadesG=`<rect x="12" y="18" width="18" height="5.5" rx="2.5" fill="#111" opacity="0.9"/>
-      <rect x="12.5" y="18.5" width="7.5" height="4.5" rx="2" fill="#20a060" opacity="0.7"/>
-      <rect x="22" y="18.5" width="7.5" height="4.5" rx="2" fill="#20a060" opacity="0.7"/>
-      <rect x="20" y="19.5" width="2" height="2.5" rx="0.5" fill="#111"/>
-      <line x1="12" y1="20.5" x2="9.5" y2="21" stroke="#111" stroke-width="1.2" stroke-linecap="round"/>
-      <line x1="30" y1="20.5" x2="32.5" y2="21" stroke="#111" stroke-width="1.2" stroke-linecap="round"/>`;
-    return base(
-      `<ellipse cx="21" cy="11.5" rx="10" ry="7" fill="#7B3F10"/>
-       <path d="M11 14 Q21 8 31 14" stroke="#D03030" stroke-width="3.5" fill="none" stroke-linecap="round"/>`,
-      shadesG,
-      `<path d="M15.5 26.5 Q21 31.5 26.5 26.5" stroke="#c8a090" stroke-width="2" fill="none" stroke-linecap="round"/>
-       <ellipse cx="16" cy="27" rx="1.2" ry="0.9" fill="#c8a090"/>
-       <ellipse cx="26" cy="27" rx="1.2" ry="0.9" fill="#c8a090"/>`
-    );
-  }
-
-  // LINUS — buzz cut (lighter than buta), nose strip, blue eyes, neutral expression
-  if(n.includes('linus')){
-    const blueEyes2=`<ellipse cx="17" cy="20.5" rx="1.5" ry="1.8" fill="#5090D0"/><ellipse cx="25" cy="20.5" rx="1.5" ry="1.8" fill="#5090D0"/><ellipse cx="17.4" cy="20" rx="0.6" ry="0.6" fill="white"/><ellipse cx="25.4" cy="20" rx="0.6" ry="0.6" fill="white"/>`;
-    return base(
-      `<ellipse cx="21" cy="11" rx="10" ry="4" fill="#555"/>
-       <rect x="11" y="11" width="20" height="2.5" fill="#555"/>`,
-      blueEyes2,
-      `<rect x="18.5" y="22" width="5" height="1.5" rx="0.7" fill="#d4a0a0"/>
-       <path d="M17.5 26.5 Q21 28.5 24.5 26.5" stroke="#b09080" stroke-width="1.4" fill="none" stroke-linecap="round"/>`
-    );
-  }
-
-  // fallback initials
+  if(n.includes('serranito')) return base(`<ellipse cx="21" cy="11" rx="10" ry="7" fill="#1a1a1a"/><rect x="11" y="11" width="20" height="6" fill="#1a1a1a"/><ellipse cx="15" cy="17" rx="2" ry="4" fill="#1a1a1a"/><ellipse cx="27" cy="17" rx="2" ry="4" fill="#1a1a1a"/>`,'');
+  if(n.includes('buta')){const be=`<ellipse cx="17" cy="20.5" rx="1.5" ry="1.8" fill="#4A90D9"/><ellipse cx="25" cy="20.5" rx="1.5" ry="1.8" fill="#4A90D9"/><ellipse cx="17.4" cy="20" rx="0.6" ry="0.6" fill="white"/><ellipse cx="25.4" cy="20" rx="0.6" ry="0.6" fill="white"/>`;return base(`<ellipse cx="21" cy="11" rx="10" ry="4" fill="#333"/><rect x="11" y="11" width="20" height="2.5" fill="#333"/>`,be,`<rect x="18.5" y="22" width="5" height="1.5" rx="0.7" fill="#d4a0a0"/><line x1="17" y1="26" x2="25" y2="26" stroke="#b09080" stroke-width="1.2" stroke-linecap="round"/><line x1="14" y1="19.5" x2="28" y2="19.5" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round"/>`);}
+  if(n.includes('pink')) return base(`<ellipse cx="21" cy="11" rx="10.5" ry="7" fill="#D4AA30"/><path d="M10 15 Q12 8 21 9 Q30 8 32 14" fill="#D4AA30"/><path d="M10 15 Q9 17 10 21" stroke="#C8A020" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M10.5 13 Q13 9 21 9.5" stroke="#E0B830" stroke-width="2.5" fill="none" stroke-linecap="round"/>`,'');
+  if(n.includes('richi')){const sh=`<rect x="12" y="18" width="18" height="5.5" rx="2.5" fill="#111" opacity="0.9"/><rect x="12.5" y="18.5" width="7.5" height="4.5" rx="2" fill="#1a6090" opacity="0.75"/><rect x="22" y="18.5" width="7.5" height="4.5" rx="2" fill="#1a6090" opacity="0.75"/><rect x="20" y="19.5" width="2" height="2.5" rx="0.5" fill="#111"/><line x1="12" y1="20.5" x2="9.5" y2="21" stroke="#111" stroke-width="1.2" stroke-linecap="round"/><line x1="30" y1="20.5" x2="32.5" y2="21" stroke="#111" stroke-width="1.2" stroke-linecap="round"/>`;return base(`<ellipse cx="21" cy="12" rx="10" ry="5.5" fill="#3a2510"/><rect x="11" y="12" width="20" height="3" fill="#3a2510"/>`,sh);}
+  if(n.includes('mambro')){const sg=`<rect x="12" y="18" width="18" height="5.5" rx="2.5" fill="#111" opacity="0.9"/><rect x="12.5" y="18.5" width="7.5" height="4.5" rx="2" fill="#20a060" opacity="0.7"/><rect x="22" y="18.5" width="7.5" height="4.5" rx="2" fill="#20a060" opacity="0.7"/><rect x="20" y="19.5" width="2" height="2.5" rx="0.5" fill="#111"/><line x1="12" y1="20.5" x2="9.5" y2="21" stroke="#111" stroke-width="1.2" stroke-linecap="round"/><line x1="30" y1="20.5" x2="32.5" y2="21" stroke="#111" stroke-width="1.2" stroke-linecap="round"/>`;return base(`<ellipse cx="21" cy="11.5" rx="10" ry="7" fill="#7B3F10"/><path d="M11 14 Q21 8 31 14" stroke="#D03030" stroke-width="3.5" fill="none" stroke-linecap="round"/>`,sg,`<path d="M15.5 26.5 Q21 31.5 26.5 26.5" stroke="#c8a090" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="16" cy="27" rx="1.2" ry="0.9" fill="#c8a090"/><ellipse cx="26" cy="27" rx="1.2" ry="0.9" fill="#c8a090"/>`);}
+  if(n.includes('linus')){const be2=`<ellipse cx="17" cy="20.5" rx="1.5" ry="1.8" fill="#5090D0"/><ellipse cx="25" cy="20.5" rx="1.5" ry="1.8" fill="#5090D0"/><ellipse cx="17.4" cy="20" rx="0.6" ry="0.6" fill="white"/><ellipse cx="25.4" cy="20" rx="0.6" ry="0.6" fill="white"/>`;return base(`<ellipse cx="21" cy="11" rx="10" ry="4" fill="#555"/><rect x="11" y="11" width="20" height="2.5" fill="#555"/>`,be2,`<rect x="18.5" y="22" width="5" height="1.5" rx="0.7" fill="#d4a0a0"/><path d="M17.5 26.5 Q21 28.5 24.5 26.5" stroke="#b09080" stroke-width="1.4" fill="none" stroke-linecap="round"/>`);}
   const ini=(name||'??').slice(0,2).toUpperCase();
-  return `<svg width="${sz}" height="${sz}" viewBox="0 0 42 42" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="21" cy="21" r="21" fill="#E1F5EE"/>
-    <text x="21" y="26" text-anchor="middle" font-size="14" font-weight="600" fill="#085041">${ini}</text>
-  </svg>`;
+  return `<svg width="${sz}" height="${sz}" viewBox="0 0 42 42" xmlns="http://www.w3.org/2000/svg"><circle cx="21" cy="21" r="21" fill="#E1F5EE"/><text x="21" y="26" text-anchor="middle" font-size="14" font-weight="600" fill="#085041">${ini}</text></svg>`;
+}
+
+// ── CARICATURE → Image for canvas ────────────────────────────────────────
+const faceCache={};
+function getFaceImage(name,cb){
+  if(faceCache[name]){cb(faceCache[name]);return;}
+  const svg=caricature(name,48);
+  const blob=new Blob([svg],{type:'image/svg+xml'});
+  const url=URL.createObjectURL(blob);
+  const img=new Image();
+  img.onload=()=>{faceCache[name]=img;cb(img);};
+  img.src=url;
 }
 
 // ── GOAL PREDICTION ──────────────────────────────────────────────────────
 function goalPred(user,workouts){
-  if(!user.goal_hours) return `<span class="gpill gnone">No goal set</span>`;
-  const totalMin=user.goal_hours*60+(user.goal_minutes||0);
+  if(!user.goal_hours) return`<span class="gpill gnone">No goal set</span>`;
+  const tot=user.goal_hours*60+(user.goal_minutes||0);
   const done=workouts.filter(w=>w.user_id===user.id&&w.status==='done'&&w.actual_km>0);
-  const goalStr=`${user.goal_hours}h${String(user.goal_minutes||0).padStart(2,'0')}`;
-  if(done.length===0) return `<span class="gpill gnone">Goal: ${goalStr} — log runs first</span>`;
+  const gs=`${user.goal_hours}h${String(user.goal_minutes||0).padStart(2,'0')}`;
+  if(!done.length) return`<span class="gpill gnone">Goal: ${gs} — log runs first</span>`;
   const last6=done.slice(-6);
   const avgKm=last6.reduce((s,w)=>s+(w.actual_km||0),0)/last6.length;
-  const weeklyEst=avgKm*3;
-  const longRun=Math.max(...done.map(w=>w.actual_km||0));
-  const reqWeekly=totalMin<210?70:totalMin<240?55:totalMin<270?45:35;
-  const reqLong=totalMin<210?32:totalMin<240?28:totalMin<270?25:22;
-  const onTrack=weeklyEst>=reqWeekly*0.85&&longRun>=reqLong*0.85;
-  return onTrack
-    ? `<span class="gpill gon">On track for ${goalStr}</span>`
-    : `<span class="gpill goff">Goal ${goalStr} at risk</span>`;
+  const wkEst=avgKm*3;
+  const lr=Math.max(...done.map(w=>w.actual_km||0));
+  const rw=tot<210?70:tot<240?55:tot<270?45:35;
+  const rl=tot<210?32:tot<240?28:tot<270?25:22;
+  return wkEst>=rw*0.85&&lr>=rl*0.85
+    ?`<span class="gpill gon">On track for ${gs}</span>`
+    :`<span class="gpill goff">Goal ${gs} at risk</span>`;
 }
 
 // ── UTILS ────────────────────────────────────────────────────────────────
@@ -359,40 +381,35 @@ function showPage(id,btn){
   document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
   document.getElementById(id).classList.add('active');btn.classList.add('active');
   if(id==='board')loadLeaderboard();
+  if(id==='race')startRace();
   if(id==='training'){renderUploadButtons();}
+  if(id==='manage'){popSelect('manage-runner');loadManage();}
   if(id==='log'){loadRecentLogs();setToday('log-date');}
   if(id==='goal')popSelect('goal-runner');
+  if(id!=='race'&&raceAnim){cancelAnimationFrame(raceAnim);raceAnim=null;}
 }
 
 // ── USERS ────────────────────────────────────────────────────────────────
 async function loadUsers(){
   const{data}=await sb.from('users').select('*').order('created_at');
   users=data||[];
-  ['log-runner','plan-runner'].forEach(id=>popSelect(id));
+  ['log-runner','plan-runner','manage-runner'].forEach(id=>popSelect(id));
   loadLeaderboard();loadTrainingChips();renderUploadButtons();
 }
 function popSelect(id){
   const el=document.getElementById(id);if(!el)return;
-  el.innerHTML=users.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
+  el.innerHTML=users.map(u=>`<option value="${u.id}">${esc(u.name)}</option>`).join('');
 }
 async function addRunner(){
-  const name=document.getElementById('new-runner-name').value.trim();
-  if(!name)return;
-  const{error}=await sb.from('users').insert({name,avatar:name.slice(0,2).toUpperCase()});
-  if(error){toast('Error');return;}
+  const name=document.getElementById('new-runner-name').value.trim();if(!name)return;
+  await sb.from('users').insert({name,avatar:name.slice(0,2).toUpperCase()});
   document.getElementById('new-runner-name').value='';
   toast(name+' added!');await loadUsers();
 }
 
-// ── LEADERBOARD ──────────────────────────────────────────────────────────
-async function loadLeaderboard(){
-  const[{data:wk},{data:cm}]=await Promise.all([
-    sb.from('workouts').select('*'),
-    sb.from('comments').select('*').is('workout_id',null)
-  ]);
-  const workouts=wk||[],comments=cm||[];
-
-  const scores=users.map(u=>{
+// ── SCORE CALC ───────────────────────────────────────────────────────────
+function calcScores(workouts){
+  return users.map(u=>{
     const uw=workouts.filter(w=>w.user_id===u.id);
     const done=uw.filter(w=>w.status==='done');
     const past=uw.filter(w=>w.status!=='planned'||new Date(w.date)<new Date());
@@ -403,20 +420,27 @@ async function loadLeaderboard(){
       const adh=past.length>0?(comp.length/past.length)*100:0;
       score=Math.round(avg*0.6+adh*0.4);
     }
-    return{u,score,done:comp.length,total:uw.length,pred:goalPred(u,workouts),comments:comments.filter(c=>c.target_user_id===u.id)};
+    return{u,score,done:comp.length,total:uw.length,pred:goalPred(u,workouts)};
   }).sort((a,b)=>b.score-a.score);
+}
 
+// ── LEADERBOARD ──────────────────────────────────────────────────────────
+async function loadLeaderboard(){
+  const[{data:wk},{data:cm}]=await Promise.all([
+    sb.from('workouts').select('*'),
+    sb.from('comments').select('*').is('workout_id',null)
+  ]);
+  const workouts=wk||[],comments=cm||[];
+  const scores=calcScores(workouts);
   const rc=['r1','r2','r3'];
   document.getElementById('leaderboard').innerHTML=scores.map((s,i)=>{
     const bc=s.score>=80?'#1D9E75':s.score>=60?'#BA7517':'#E24B4A';
     const uOpts=users.map(u=>`<option value="${esc(u.name)}">${esc(u.name)}</option>`).join('');
-    const commHtml=s.comments.map(c=>`
-      <div class="citem">
-        <div style="width:26px;height:26px;flex-shrink:0">${caricature(c.author_name,26)}</div>
-        <div class="cbubble"><div class="cauthor">${esc(c.author_name)}</div><div class="cmsg">${esc(c.message)}</div></div>
-      </div>`).join('');
+    const commHtml=(comments.filter(c=>c.target_user_id===s.u.id)||[]).map(c=>`
+      <div class="citem"><div style="width:26px;height:26px;flex-shrink:0">${caricature(c.author_name,26)}</div>
+      <div class="cbubble"><div class="cauthor">${esc(c.author_name)}</div><div class="cmsg">${esc(c.message)}</div></div></div>`).join('');
     const uid=s.u.id;
-    return `<div class="rrow">
+    return`<div class="rrow">
       <div class="rrow-top">
         <div class="rnk ${rc[i]||''}">${i+1}</div>
         <div style="width:42px;height:42px;flex-shrink:0">${caricature(s.u.name)}</div>
@@ -428,8 +452,7 @@ async function loadLeaderboard(){
         </div>
         <div class="scol"><div class="sbig">${s.score}</div><div class="stiny">score</div></div>
       </div>
-      <div class="csec">
-        ${commHtml}
+      <div class="csec">${commHtml}
         <div class="cinrow">
           <select id="csu-${uid}">${uOpts}</select>
           <input id="cu-${uid}" type="text" placeholder="Motivate ${esc(s.u.name)}..." maxlength="140" onkeydown="if(event.key==='Enter')postComment('cu-${uid}','csu-${uid}','${uid}',null)">
@@ -440,6 +463,130 @@ async function loadLeaderboard(){
   }).join('')||'<div class="empty">No data yet</div>';
 }
 
+// ── RACE ANIMATION ───────────────────────────────────────────────────────
+async function startRace(){
+  const{data:wk}=await sb.from('workouts').select('*');
+  raceScores=calcScores(wk||[]);
+  const canvas=document.getElementById('race-canvas');
+  const W=canvas.offsetWidth||370;canvas.width=W;canvas.height=500;
+  const ctx=canvas.getContext('2d');
+
+  // Pre-load all face images
+  let loaded=0;
+  const total=raceScores.length||1;
+  if(total===0){ctx.fillStyle='#999';ctx.font='14px Arial';ctx.fillText('No runners yet',W/2-50,250);return;}
+
+  // animated positions: start bunched, spread to score positions
+  const maxScore=Math.max(...raceScores.map(s=>s.score),1);
+  const TRACK_LEFT=40,TRACK_RIGHT=W-40;
+  const LANE_HEIGHT=70;
+  const TOTAL_HEIGHT=LANE_HEIGHT*raceScores.length+40;
+  canvas.height=TOTAL_HEIGHT+60;
+
+  // target x for each runner based on score
+  const targetX=s=>TRACK_LEFT+(s.score/100)*(TRACK_RIGHT-TRACK_LEFT-44);
+  // current animated positions
+  const positions=raceScores.map(()=>TRACK_LEFT);
+  let frame=0;
+
+  // bobbing offset per runner (staggered)
+  const bobOffset=raceScores.map((_,i)=>i*0.8);
+
+  function drawFrame(){
+    ctx.clearRect(0,0,W,canvas.height);
+
+    // background
+    ctx.fillStyle='#f0fdf4';
+    ctx.fillRect(0,0,W,canvas.height);
+
+    // track lanes
+    raceScores.forEach((_,i)=>{
+      const y=40+i*LANE_HEIGHT;
+      ctx.fillStyle=i%2===0?'#e8f5e9':'#f1f8e9';
+      ctx.fillRect(0,y,W,LANE_HEIGHT);
+      // lane line
+      ctx.strokeStyle='#c8e6c9';ctx.lineWidth=0.5;
+      ctx.beginPath();ctx.moveTo(0,y+LANE_HEIGHT);ctx.lineTo(W,y+LANE_HEIGHT);ctx.stroke();
+    });
+
+    // finish line (right edge dashes)
+    ctx.strokeStyle='#1D9E75';ctx.lineWidth=2;ctx.setLineDash([6,4]);
+    ctx.beginPath();ctx.moveTo(TRACK_RIGHT,30);ctx.lineTo(TRACK_RIGHT,canvas.height-10);ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#1D9E75';ctx.font='bold 10px Arial';ctx.textAlign='center';
+    ctx.fillText('FINISH',TRACK_RIGHT,22);
+
+    // start line
+    ctx.strokeStyle='#bbb';ctx.lineWidth=1;ctx.setLineDash([4,3]);
+    ctx.beginPath();ctx.moveTo(TRACK_LEFT,30);ctx.lineTo(TRACK_LEFT,canvas.height-10);ctx.stroke();
+    ctx.setLineDash([]);
+
+    // animate positions toward target (easing)
+    let allDone=true;
+    raceScores.forEach((s,i)=>{
+      const tx=targetX(s);
+      positions[i]+=(tx-positions[i])*0.04;
+      if(Math.abs(positions[i]-tx)>0.5)allDone=false;
+    });
+
+    // draw runners
+    raceScores.forEach((s,i)=>{
+      const y=40+i*LANE_HEIGHT;
+      const cx=positions[i]+22;
+      const bob=Math.sin(frame*0.08+bobOffset[i])*2.5;
+      const cy=y+LANE_HEIGHT/2+bob;
+
+      // shadow
+      ctx.fillStyle='rgba(0,0,0,0.08)';
+      ctx.beginPath();ctx.ellipse(cx,y+LANE_HEIGHT-8,12,4,0,0,Math.PI*2);ctx.fill();
+
+      // body (running figure)
+      // shirt
+      ctx.fillStyle=['#1D9E75','#378ADD','#D4537E','#D85A30','#7F77DD','#BA7517'][i%6];
+      ctx.beginPath();ctx.roundRect(cx-8,cy-4,16,14,3);ctx.fill();
+
+      // legs animation
+      const legSwing=Math.sin(frame*0.15+bobOffset[i])*12;
+      ctx.strokeStyle=ctx.fillStyle;ctx.lineWidth=3;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(cx-3,cy+10);ctx.lineTo(cx-6+legSwing*0.3,cy+22);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(cx+3,cy+10);ctx.lineTo(cx+6-legSwing*0.3,cy+22);ctx.stroke();
+
+      // arms
+      const armSwing=Math.sin(frame*0.15+bobOffset[i]+Math.PI)*8;
+      ctx.lineWidth=2.5;
+      ctx.beginPath();ctx.moveTo(cx-7,cy+2);ctx.lineTo(cx-12+armSwing*0.2,cy+8);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(cx+7,cy+2);ctx.lineTo(cx+12-armSwing*0.2,cy+8);ctx.stroke();
+
+      // face (drawn from cache)
+      const img=faceCache[s.u.name];
+      if(img){ctx.drawImage(img,cx-14,cy-24,28,28);}
+      else{
+        ctx.fillStyle='#FDDBB4';ctx.beginPath();ctx.arc(cx,cy-12,10,0,Math.PI*2);ctx.fill();
+        getFaceImage(s.u.name,()=>{});
+      }
+
+      // name label
+      ctx.fillStyle='#1a1a1a';ctx.font='bold 11px Arial';ctx.textAlign='left';
+      ctx.fillText(s.u.name,TRACK_LEFT+2,y+14);
+
+      // score badge
+      ctx.fillStyle=s.score>=80?'#1D9E75':s.score>=60?'#BA7517':'#E24B4A';
+      ctx.beginPath();ctx.roundRect(W-38,y+8,32,20,10);ctx.fill();
+      ctx.fillStyle='white';ctx.font='bold 11px Arial';ctx.textAlign='center';
+      ctx.fillText(s.score,W-22,y+22);
+    });
+
+    frame++;
+    raceAnim=requestAnimationFrame(drawFrame);
+  }
+
+  // preload all faces then start
+  raceScores.forEach(s=>getFaceImage(s.u.name,()=>{
+    loaded++;if(loaded===total)drawFrame();
+  }));
+  if(raceScores.length===0)drawFrame();
+}
+
 // ── COMMENTS ─────────────────────────────────────────────────────────────
 async function postComment(inId,selId,targetUid,workoutId){
   const msg=document.getElementById(inId)?.value.trim();
@@ -448,8 +595,7 @@ async function postComment(inId,selId,targetUid,workoutId){
   const payload={author_name:author,message:msg};
   if(targetUid&&targetUid!=='null')payload.target_user_id=targetUid;
   if(workoutId&&workoutId!=='null')payload.workout_id=workoutId;
-  const{error}=await sb.from('comments').insert(payload);
-  if(error){toast('Error posting');return;}
+  await sb.from('comments').insert(payload);
   document.getElementById(inId).value='';
   toast('Posted!');
   if(workoutId&&workoutId!=='null')loadTrainingSchedule();
@@ -490,42 +636,106 @@ function wCard(w,comments=[]){
   const actRow=(w.actual_km||w.actual_time_min)?`<div class="wcr">Actual <span>${w.actual_km?w.actual_km+'km':''} ${w.actual_time_min?'· '+w.actual_time_min+'min':''} ${w.actual_pace?'· '+w.actual_pace+'/km':''}</span></div>`:'';
   const locRow=w.location?`<div class="wcr" style="font-size:12px;margin-top:2px">${esc(w.location)}${w.notes?' · '+esc(w.notes):''}</div>`:'';
   const uOpts=users.map(u=>`<option value="${esc(u.name)}">${esc(u.name)}</option>`).join('');
-  const commHtml=comments.map(c=>`
-    <div class="citem">
-      <div style="width:26px;height:26px;flex-shrink:0">${caricature(c.author_name,26)}</div>
-      <div class="cbubble"><div class="cauthor">${esc(c.author_name)}</div><div class="cmsg">${esc(c.message)}</div></div>
-    </div>`).join('');
+  const commHtml=comments.map(c=>`<div class="citem"><div style="width:26px;height:26px;flex-shrink:0">${caricature(c.author_name,26)}</div><div class="cbubble"><div class="cauthor">${esc(c.author_name)}</div><div class="cmsg">${esc(c.message)}</div></div></div>`).join('');
   const wid=w.id;
-  return `<div class="wcard">
-    <div class="wc-inner">
-      <div class="wch"><div class="wct">${ds}</div><div class="wcty">${esc(w.type||'')}</div></div>
-      <div class="wcr">Planned <span>${w.planned_km?w.planned_km+'km':'—'} ${w.planned_pace?'@ '+w.planned_pace+'/km':''}</span></div>
-      ${actRow}${locRow}${tag}
+  return`<div class="wcard"><div class="wc-inner">
+    <div class="wch"><div class="wct">${ds}</div><div class="wcty">${esc(w.type||'')}</div></div>
+    <div class="wcr">Planned <span>${w.planned_km?w.planned_km+'km':'—'} ${w.planned_pace?'@ '+w.planned_pace+'/km':''}</span></div>
+    ${actRow}${locRow}${tag}
+    <div class="wc-actions">
+      <button class="edit-btn" onclick="openEditWorkout('${wid}')">Edit</button>
+      <button class="del-btn" onclick="confirmDelete('${wid}')">Delete</button>
     </div>
-    <div class="csec">
-      ${commHtml}
-      <div class="cinrow">
-        <select id="csw-${wid}">${uOpts}</select>
-        <input id="cw-${wid}" type="text" placeholder="Comment..." maxlength="140" onkeydown="if(event.key==='Enter')postComment('cw-${wid}','csw-${wid}',null,'${wid}')">
-        <button onclick="postComment('cw-${wid}','csw-${wid}',null,'${wid}')">Send</button>
-      </div>
+  </div>
+  <div class="csec">${commHtml}
+    <div class="cinrow">
+      <select id="csw-${wid}">${uOpts}</select>
+      <input id="cw-${wid}" type="text" placeholder="Comment..." maxlength="140" onkeydown="if(event.key==='Enter')postComment('cw-${wid}','csw-${wid}',null,'${wid}')">
+      <button onclick="postComment('cw-${wid}','csw-${wid}',null,'${wid}')">Send</button>
     </div>
-  </div>`;
+  </div></div>`;
 }
 
-// ── ADD WORKOUT MODAL ────────────────────────────────────────────────────
-function openAddWorkout(){popSelect('plan-runner');setToday('plan-date');document.getElementById('add-workout-modal').classList.add('open');}
+// ── MANAGE TAB ───────────────────────────────────────────────────────────
+async function loadManage(){
+  const uid=document.getElementById('manage-runner')?.value;
+  const status=document.getElementById('manage-status')?.value;
+  if(!uid)return;
+  let q=sb.from('workouts').select('*').eq('user_id',uid).order('date');
+  if(status)q=q.eq('status',status);
+  const{data:ws}=await q;
+  const workouts=ws||[];
+  if(!workouts.length){document.getElementById('manage-content').innerHTML='<div class="empty">No workouts found</div>';return;}
+  document.getElementById('manage-content').innerHTML=workouts.map(w=>{
+    const date=new Date(w.date+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+    let tagClass=w.status==='done'?'tdone':w.status==='partial'?'tpart':w.status==='missed'?'tmiss':'tplan';
+    return`<div class="wcard"><div class="wc-inner">
+      <div class="wch"><div class="wct">${date}</div><div class="wcty">${esc(w.type||'')}</div></div>
+      <div class="wcr">Planned <span>${w.planned_km?w.planned_km+'km':'—'} ${w.planned_pace?'@ '+w.planned_pace+'/km':''}</span></div>
+      ${(w.actual_km||w.actual_time_min)?`<div class="wcr">Actual <span>${w.actual_km?w.actual_km+'km':''} ${w.actual_time_min?'· '+w.actual_time_min+'min':''}</span></div>`:''}
+      <span class="tag ${tagClass}">${w.status||'planned'}</span>
+      <div class="wc-actions">
+        <button class="edit-btn" onclick="openEditWorkout('${w.id}')">Edit</button>
+        <button class="del-btn" onclick="confirmDelete('${w.id}')">Delete</button>
+      </div>
+    </div></div>`;
+  }).join('');
+}
+
+// ── EDIT / DELETE ────────────────────────────────────────────────────────
+async function openEditWorkout(id){
+  const{data:w}=await sb.from('workouts').select('*').eq('id',id).single();
+  if(!w)return;
+  document.getElementById('modal-title').textContent='Edit workout';
+  document.getElementById('edit-workout-id').value=id;
+  document.getElementById('plan-runner').value=w.user_id;
+  document.getElementById('plan-date').value=w.date;
+  document.getElementById('plan-type').value=w.type||'Easy run';
+  document.getElementById('plan-km').value=w.planned_km||'';
+  document.getElementById('plan-pace').value=w.planned_pace||'';
+  document.getElementById('delete-btn').style.display='block';
+  document.getElementById('workout-modal').classList.add('open');
+}
+function openAddWorkout(){
+  document.getElementById('modal-title').textContent='Add planned workout';
+  document.getElementById('edit-workout-id').value='';
+  document.getElementById('plan-km').value='';
+  document.getElementById('plan-pace').value='';
+  document.getElementById('delete-btn').style.display='none';
+  popSelect('plan-runner');setToday('plan-date');
+  document.getElementById('workout-modal').classList.add('open');
+}
 function closeModal(e){if(e.target.classList.contains('movl'))e.target.classList.remove('open');}
-async function savePlan(){
+
+async function saveWorkoutPlan(){
+  const id=document.getElementById('edit-workout-id').value;
   const uid=document.getElementById('plan-runner').value;
   const date=document.getElementById('plan-date').value;
   const type=document.getElementById('plan-type').value;
   const km=parseFloat(document.getElementById('plan-km').value)||null;
   const pace=document.getElementById('plan-pace').value||null;
   if(!date){toast('Pick a date');return;}
-  await sb.from('workouts').insert({user_id:uid,date,type,planned_km:km,planned_pace:pace,status:'planned'});
-  document.getElementById('add-workout-modal').classList.remove('open');
-  toast('Workout added!');loadTrainingSchedule();
+  if(id){
+    await sb.from('workouts').update({date,type,planned_km:km,planned_pace:pace}).eq('id',id);
+    toast('Workout updated!');
+  } else {
+    await sb.from('workouts').insert({user_id:uid,date,type,planned_km:km,planned_pace:pace,status:'planned'});
+    toast('Workout added!');
+  }
+  document.getElementById('workout-modal').classList.remove('open');
+  loadTrainingSchedule();loadManage();
+}
+
+async function confirmDelete(id){
+  if(!confirm('Delete this workout? This cannot be undone.'))return;
+  await sb.from('workouts').delete().eq('id',id);
+  toast('Deleted');
+  document.getElementById('workout-modal').classList.remove('open');
+  loadTrainingSchedule();loadManage();loadLeaderboard();
+}
+async function deleteWorkout(){
+  const id=document.getElementById('edit-workout-id').value;
+  if(id)confirmDelete(id);
 }
 
 // ── LOG WORKOUT ──────────────────────────────────────────────────────────
@@ -559,14 +769,14 @@ async function loadRecentLogs(){
   document.getElementById('recent-logs').innerHTML=data.map(w=>{
     const d=new Date(w.date+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
     const tc=w.status==='done'?'tdone':w.status==='partial'?'tpart':'tmiss';
-    return `<div class="wcard"><div class="wc-inner">
+    return`<div class="wcard"><div class="wc-inner">
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
         <div style="width:28px;height:28px;flex-shrink:0">${caricature(w.users?.name||'',28)}</div>
         <div class="wct">${esc(w.users?.name||'')} — ${d}</div>
         <div class="wcty">${esc(w.type||'')}</div>
       </div>
       <div class="wcr">${w.actual_km||'—'}km <span>${w.actual_time_min?w.actual_time_min+'min':''} ${w.actual_pace?'· '+w.actual_pace+'/km':''}</span></div>
-      ${w.location?`<div class="wcr" style="font-size:12px;color:var(--text-muted)">${esc(w.location)}${w.notes?' · '+esc(w.notes):''}</div>`:''}
+      ${w.location?`<div class="wcr" style="font-size:12px;color:var(--tm)">${esc(w.location)}${w.notes?' · '+esc(w.notes):''}</div>`:''}
       <span class="tag ${tc}">Score: ${w.compliance_score??100}</span>
     </div></div>`;
   }).join('');
@@ -597,41 +807,36 @@ function calcGoal(){
   const ok=wkm>=rw*0.85&&lr>=rl*0.85;
   const ps=Math.floor(pkm)+':'+String(Math.round((pkm%1)*60)).padStart(2,'0');
   const box=document.getElementById('verdict-box');
-  if(ok){
-    box.innerHTML=`<div class="verd vgood"><div class="vtitle">On track</div><div class="vbody">Target pace: ${ps}/km · ${wl} weeks to go. Volume supports your goal. Progress long run ~1km/week.</div></div>`;
-  } else {
+  if(ok){box.innerHTML=`<div class="verd vgood"><div class="vtitle">On track</div><div class="vbody">Target pace: ${ps}/km · ${wl} weeks to go. Volume supports your goal.</div></div>`;}
+  else{
     const gk=Math.max(0,Math.round(rw-wkm)),gl=Math.max(0,Math.round(rl-lr));
     const msg=[];if(gk>0)msg.push(`add ~${gk}km/week`);if(gl>0)msg.push(`extend long run to ${rl}km`);
-    box.innerHTML=`<div class="verd vbad"><div class="vtitle">Not yet on track</div><div class="vbody">Target pace: ${ps}/km · ${msg.join(' and ')}. ${wl>16?'Plenty of time — ramp gradually.':wl>8?'Focus on consistency.':'Time is tight — prioritize key sessions.'}</div></div>`;
+    box.innerHTML=`<div class="verd vbad"><div class="vtitle">Not yet on track</div><div class="vbody">Target pace: ${ps}/km · ${msg.join(' and ')}. ${wl>16?'Plenty of time.':wl>8?'Focus on consistency.':'Time is tight.'}</div></div>`;
   }
 }
 
-// ── PER-RUNNER UPLOAD BUTTONS ────────────────────────────────────────────
+// ── PER-RUNNER UPLOAD ────────────────────────────────────────────────────
 function renderUploadButtons(){
   const wrap=document.getElementById('per-runner-upload');
   if(!wrap||!users.length)return;
   wrap.innerHTML=`<div class="slbl" style="margin-top:4px">Upload individual plans</div>`+
-    users.map(u=>`
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-        <div style="width:28px;height:28px;flex-shrink:0">${caricature(u.name,28)}</div>
-        <span style="font-size:13px;font-weight:500;flex:1">${esc(u.name)}</span>
-        <input type="file" id="up-${u.id}" accept=".xlsx,.xls" style="display:none" onchange="handleRunnerUpload(event,'${u.id}','${esc(u.name)}')">
-        <button onclick="document.getElementById('up-${u.id}').click()" style="padding:6px 12px;background:transparent;border:0.5px solid #1D9E75;color:#1D9E75;border-radius:var(--rs);font-size:12px;cursor:pointer;white-space:nowrap;">↑ Upload</button>
-        <span id="upst-${u.id}" style="font-size:11px;color:var(--text-muted);min-width:50px;text-align:right"></span>
-      </div>`
-    ).join('');
+    users.map(u=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      <div style="width:28px;height:28px;flex-shrink:0">${caricature(u.name,28)}</div>
+      <span style="font-size:13px;font-weight:500;flex:1">${esc(u.name)}</span>
+      <input type="file" id="up-${u.id}" accept=".xlsx,.xls" style="display:none" onchange="handleRunnerUpload(event,'${u.id}')">
+      <button onclick="document.getElementById('up-${u.id}').click()" style="padding:6px 12px;background:transparent;border:0.5px solid #1D9E75;color:#1D9E75;border-radius:var(--rs);font-size:12px;cursor:pointer;">↑ Upload</button>
+      <span id="upst-${u.id}" style="font-size:11px;color:var(--tm);min-width:50px;text-align:right"></span>
+    </div>`).join('');
 }
-
-async function handleRunnerUpload(event,userId,userName){
+async function handleRunnerUpload(event,userId){
   const file=event.target.files[0];if(!file)return;
   const st=document.getElementById(`upst-${userId}`);
-  st.textContent='Reading...';st.style.color='var(--text-muted)';
+  st.textContent='Reading...';st.style.color='var(--tm)';
   const reader=new FileReader();
   reader.onload=async(e)=>{
     try{
       const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
       const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});
-      // find header row — accepts files with or without runner_name column
       let hi=rows.findIndex(r=>r.some(c=>/date/i.test(String(c))));
       if(hi===-1){st.textContent='No header';st.style.color='var(--red)';return;}
       const hdr=rows[hi].map(h=>String(h).trim().toLowerCase());
@@ -647,10 +852,7 @@ async function handleRunnerUpload(event,userId,userName){
         if(typeof rd==='number'){const d=XLSX.SSF.parse_date_code(rd);ds=`${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;}
         else{const pts=String(rd).trim().split(/[\/\-]/);if(pts.length===3){ds=pts[0].length===4?`${pts[0]}-${pts[1].padStart(2,'0')}-${pts[2].padStart(2,'0')}`:`${pts[2]}-${pts[1].padStart(2,'0')}-${pts[0].padStart(2,'0')}`;}}
         if(!ds)continue;
-        const type=tc>=0?String(row[tc]).trim()||'Easy run':'Easy run';
-        const km=kc>=0?parseFloat(row[kc])||null:null;
-        const pace=pc>=0?String(row[pc]).trim()||null:null;
-        await sb.from('workouts').insert({user_id:userId,date:ds,type,planned_km:km,planned_pace:pace,status:'planned'});
+        await sb.from('workouts').insert({user_id:userId,date:ds,type:tc>=0?String(row[tc]).trim()||'Easy run':'Easy run',planned_km:kc>=0?parseFloat(row[kc])||null:null,planned_pace:pc>=0?String(row[pc]).trim()||null:null,status:'planned'});
         imp++;
       }
       st.textContent=`${imp} added`;st.style.color='var(--teal)';
