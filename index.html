@@ -154,7 +154,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
 <div class="hdr">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;">
     <div><h1>Berlin Marathon 2026</h1><div class="sub">Track your crew's progress</div></div>
-    <div class="cpill" id="countdown">... days</div>
+    <div id="countdown" style="text-align:right;line-height:1.2;">
+      <div id="cd-days" style="font-size:22px;font-weight:700;color:var(--teal);letter-spacing:-0.5px;"></div>
+      <div id="cd-time" style="font-size:12px;font-weight:500;color:var(--tm);letter-spacing:0.02em;"></div>
+      <div style="font-size:10px;color:var(--th);margin-top:1px;">to Berlin Marathon</div>
+    </div>
   </div>
 </div>
 
@@ -415,7 +419,20 @@ function goalPred(user,workouts){
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 function setToday(id){document.getElementById(id).value=new Date().toISOString().split('T')[0];}
-document.getElementById('countdown').textContent=Math.ceil((MDATE-new Date())/86400000)+' days';
+function updateCountdown(){
+  const now=new Date();
+  const diff=MDATE-now;
+  if(diff<=0){document.getElementById('cd-days').textContent='RACE DAY';document.getElementById('cd-time').textContent='';return;}
+  const days=Math.floor(diff/(1000*60*60*24));
+  const hours=Math.floor((diff%(1000*60*60*24))/(1000*60*60));
+  const mins=Math.floor((diff%(1000*60*60))/(1000*60));
+  const secs=Math.floor((diff%(1000*60))/1000);
+  document.getElementById('cd-days').textContent=days+' days';
+  document.getElementById('cd-time').textContent=
+    String(hours).padStart(2,'0')+'h '+String(mins).padStart(2,'0')+'m '+String(secs).padStart(2,'0')+'s';
+}
+updateCountdown();
+setInterval(updateCountdown,1000);
 
 function showPage(id,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
