@@ -119,6 +119,21 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
 .cinrow button{padding:7px 12px;background:var(--teal);color:white;border:none;border-radius:var(--rs);font-size:13px;cursor:pointer;flex-shrink:0;}
 /* race canvas */
 #race-canvas{width:100%;border-radius:var(--r);display:block;}
+/* calendar */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.cal-dow{text-align:center;font-size:10px;font-weight:600;color:var(--th);padding:4px 0;}
+.cal-day{min-height:52px;border-radius:6px;background:var(--bg);border:0.5px solid var(--bdr);padding:3px;cursor:pointer;position:relative;}
+.cal-day:hover{background:var(--tl);}
+.cal-day.today{border-color:var(--teal);border-width:1.5px;}
+.cal-day.other-month{background:transparent;border-color:transparent;}
+.cal-day.other-month .cal-day-num{color:var(--th);}
+.cal-day-num{font-size:11px;font-weight:500;color:var(--tm);margin-bottom:2px;}
+.cal-dots{display:flex;flex-wrap:wrap;gap:2px;margin-top:1px;}
+.cal-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.cal-day-detail-card{background:var(--bg);border-radius:var(--r);border:0.5px solid var(--bdr);padding:12px 14px;margin-bottom:8px;}
+.cal-day-detail-card .date-title{font-size:13px;font-weight:600;color:var(--td);margin-bottom:8px;}
+.cal-runner-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--bdr);}
+.cal-runner-row:last-child{border-bottom:none;}
 /* score explanation */
 .score-box{background:var(--bg);border-radius:var(--r);border:0.5px solid var(--bdr);padding:16px;margin-bottom:12px;}
 .score-box h3{font-size:15px;font-weight:600;margin-bottom:8px;color:var(--td);}
@@ -150,6 +165,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
   <button onclick="showPage('manage',this)">Manage</button>
   <button onclick="showPage('log',this)">Log</button>
   <button onclick="showPage('goal',this)">Goal</button>
+  <button onclick="showPage('calendar',this)">Calendar</button>
   <button onclick="showPage('scoring',this)">Scoring</button>
 </div>
 
@@ -200,9 +216,21 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
 <div id="log" class="page">
   <div class="slbl">Log a completed workout</div>
   <div class="card">
-    <div class="fg"><label class="fl">Runner</label><select id="log-runner"></select></div>
-    <div class="fg"><label class="fl">Date</label><input type="date" id="log-date"></div>
-    <div class="fg"><label class="fl">Workout type</label>
+    <div class="fg"><label class="fl">Runner</label><select id="log-runner" onchange="loadPlannedSessions()"></select></div>
+    <div class="fg"><label class="fl">Was this planned or spontaneous?</label>
+      <div style="display:flex;gap:8px;">
+        <button id="btn-planned" onclick="setLogType('planned')" style="flex:1;padding:10px;border-radius:var(--rs);border:0.5px solid var(--teal);background:var(--tl);color:var(--td);font-size:14px;font-weight:500;cursor:pointer;">Planned</button>
+        <button id="btn-spontaneous" onclick="setLogType('spontaneous')" style="flex:1;padding:10px;border-radius:var(--rs);border:0.5px solid var(--bdr);background:transparent;color:var(--tm);font-size:14px;cursor:pointer;">Spontaneous</button>
+      </div>
+    </div>
+    <div id="planned-session-picker" class="fg">
+      <label class="fl">Select the planned session</label>
+      <select id="log-planned-session" onchange="fillFromPlanned()">
+        <option value="">Loading sessions...</option>
+      </select>
+    </div>
+    <div id="spontaneous-date" class="fg" style="display:none"><label class="fl">Date</label><input type="date" id="log-date"></div>
+    <div id="spontaneous-type" class="fg" style="display:none"><label class="fl">Workout type</label>
       <select id="log-type">
         <option>Easy run</option><option>Tempo run</option><option>Long run</option>
         <option>Intervals</option><option>Recovery run</option><option>Race</option>
@@ -245,6 +273,19 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
     <button class="btn btnp" style="margin-top:4px" onclick="saveGoal()">Save my goal</button>
     <div id="verdict-box"></div>
   </div>
+</div>
+
+<!-- CALENDAR -->
+<div id="calendar" class="page">
+  <div class="slbl">Training calendar</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <button onclick="calPrev()" style="padding:6px 14px;border:0.5px solid var(--bdr);border-radius:var(--rs);background:transparent;cursor:pointer;font-size:18px;">‹</button>
+    <span id="cal-title" style="font-size:15px;font-weight:600;"></span>
+    <button onclick="calNext()" style="padding:6px 14px;border:0.5px solid var(--bdr);border-radius:var(--rs);background:transparent;cursor:pointer;font-size:18px;">›</button>
+  </div>
+  <div id="cal-legend" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;"></div>
+  <div id="cal-grid"></div>
+  <div id="cal-day-detail" style="margin-top:12px;"></div>
 </div>
 
 <!-- SCORING -->
@@ -384,7 +425,8 @@ function showPage(id,btn){
   if(id==='race')startRace();
   if(id==='training'){renderUploadButtons();}
   if(id==='manage'){popSelect('manage-runner');loadManage();}
-  if(id==='log'){loadRecentLogs();setToday('log-date');}
+  if(id==='calendar'){loadCalendar();}
+  if(id==='log'){loadRecentLogs();setToday('log-date');setLogType('planned');loadPlannedSessions();}
   if(id==='goal')popSelect('goal-runner');
   if(id!=='race'&&raceAnim){cancelAnimationFrame(raceAnim);raceAnim=null;}
 }
@@ -436,9 +478,11 @@ async function loadLeaderboard(){
   document.getElementById('leaderboard').innerHTML=scores.map((s,i)=>{
     const bc=s.score>=80?'#1D9E75':s.score>=60?'#BA7517':'#E24B4A';
     const uOpts=users.map(u=>`<option value="${esc(u.name)}">${esc(u.name)}</option>`).join('');
-    const commHtml=(comments.filter(c=>c.target_user_id===s.u.id)||[]).map(c=>`
-      <div class="citem"><div style="width:26px;height:26px;flex-shrink:0">${caricature(c.author_name,26)}</div>
-      <div class="cbubble"><div class="cauthor">${esc(c.author_name)}</div><div class="cmsg">${esc(c.message)}</div></div></div>`).join('');
+    const commHtml=(comments.filter(c=>c.target_user_id===s.u.id)||[]).map(c=>{
+      const cd=c.created_at?new Date(c.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+      return`<div class="citem"><div style="width:26px;height:26px;flex-shrink:0">${caricature(c.author_name,26)}</div>
+      <div class="cbubble"><div class="cauthor">${esc(c.author_name)}<span style="font-weight:400;color:var(--th);margin-left:6px">${cd}</span></div><div class="cmsg">${esc(c.message)}</div></div></div>`;
+    }).join('');
     const uid=s.u.id;
     return`<div class="rrow">
       <div class="rrow-top">
@@ -636,7 +680,10 @@ function wCard(w,comments=[]){
   const actRow=(w.actual_km||w.actual_time_min)?`<div class="wcr">Actual <span>${w.actual_km?w.actual_km+'km':''} ${w.actual_time_min?'· '+w.actual_time_min+'min':''} ${w.actual_pace?'· '+w.actual_pace+'/km':''}</span></div>`:'';
   const locRow=w.location?`<div class="wcr" style="font-size:12px;margin-top:2px">${esc(w.location)}${w.notes?' · '+esc(w.notes):''}</div>`:'';
   const uOpts=users.map(u=>`<option value="${esc(u.name)}">${esc(u.name)}</option>`).join('');
-  const commHtml=comments.map(c=>`<div class="citem"><div style="width:26px;height:26px;flex-shrink:0">${caricature(c.author_name,26)}</div><div class="cbubble"><div class="cauthor">${esc(c.author_name)}</div><div class="cmsg">${esc(c.message)}</div></div></div>`).join('');
+  const commHtml=comments.map(c=>{
+    const cd=c.created_at?new Date(c.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+    return`<div class="citem"><div style="width:26px;height:26px;flex-shrink:0">${caricature(c.author_name,26)}</div><div class="cbubble"><div class="cauthor">${esc(c.author_name)}<span style="font-weight:400;color:var(--th);margin-left:6px">${cd}</span></div><div class="cmsg">${esc(c.message)}</div></div></div>`;
+  }).join('');
   const wid=w.id;
   return`<div class="wcard"><div class="wc-inner">
     <div class="wch"><div class="wct">${ds}</div><div class="wcty">${esc(w.type||'')}</div></div>
@@ -741,27 +788,37 @@ async function deleteWorkout(){
 // ── LOG WORKOUT ──────────────────────────────────────────────────────────
 async function saveWorkout(){
   const uid=document.getElementById('log-runner').value;
-  const date=document.getElementById('log-date').value;
-  const type=document.getElementById('log-type').value;
   const km=parseFloat(document.getElementById('log-km').value)||null;
   const min=parseFloat(document.getElementById('log-min').value)||null;
   const location=document.getElementById('log-location').value||null;
   const notes=document.getElementById('log-notes').value||null;
-  if(!date||!km){toast('Date and distance required');return;}
+  if(!km){toast('Distance required');return;}
   const pace=(km&&min)?(min/km).toFixed(2):null;
   const paceStr=pace?Math.floor(pace)+':'+String(Math.round((pace%1)*60)).padStart(2,'0'):null;
-  const{data:planned}=await sb.from('workouts').select('*').eq('user_id',uid).eq('date',date).eq('status','planned').limit(1);
   let compliance=100,status='done';
-  if(planned&&planned.length>0){
-    const p=planned[0];
-    if(p.planned_km){compliance=Math.min(100,Math.round((km/p.planned_km)*100));if(compliance<70)status='partial';if(km===0)status='missed';}
-    await sb.from('workouts').update({actual_km:km,actual_time_min:min,actual_pace:paceStr,location,notes,status,compliance_score:compliance}).eq('id',p.id);
+
+  if(currentLogType==='planned'){
+    const planId=document.getElementById('log-planned-session').value;
+    if(!planId){toast('Select a planned session');return;}
+    const{data:p}=await sb.from('workouts').select('*').eq('id',planId).single();
+    if(!p){toast('Session not found');return;}
+    if(p.planned_km){
+      compliance=Math.min(100,Math.round((km/p.planned_km)*100));
+      if(compliance<70)status='partial';
+      if(km===0)status='missed';
+    }
+    await sb.from('workouts').update({actual_km:km,actual_time_min:min,actual_pace:paceStr,location,notes,status,compliance_score:compliance}).eq('id',planId);
   } else {
+    // spontaneous
+    const date=document.getElementById('log-date').value;
+    const type=document.getElementById('log-type').value;
+    if(!date){toast('Date required');return;}
     await sb.from('workouts').insert({user_id:uid,date,type,actual_km:km,actual_time_min:min,actual_pace:paceStr,location,notes,status:'done',compliance_score:100});
   }
+
   toast('Saved! Score: '+compliance);
   ['log-km','log-min','log-location','log-notes'].forEach(id=>document.getElementById(id).value='');
-  loadRecentLogs();loadLeaderboard();
+  loadPlannedSessions();loadRecentLogs();loadLeaderboard();
 }
 async function loadRecentLogs(){
   const{data}=await sb.from('workouts').select('*,users(name)').neq('status','planned').order('date',{ascending:false}).limit(10);
@@ -864,8 +921,147 @@ async function handleRunnerUpload(event,userId){
   reader.readAsArrayBuffer(file);
 }
 
+// ── LOG TYPE SELECTOR ────────────────────────────────────────────────────
+let currentLogType='planned';
+function setLogType(type){
+  currentLogType=type;
+  const pb=document.getElementById('btn-planned');
+  const sb2=document.getElementById('btn-spontaneous');
+  if(type==='planned'){
+    pb.style.background='var(--tl)';pb.style.borderColor='var(--teal)';pb.style.color='var(--td)';pb.style.fontWeight='500';
+    sb2.style.background='transparent';sb2.style.borderColor='var(--bdr)';sb2.style.color='var(--tm)';sb2.style.fontWeight='400';
+    document.getElementById('planned-session-picker').style.display='block';
+    document.getElementById('spontaneous-date').style.display='none';
+    document.getElementById('spontaneous-type').style.display='none';
+    loadPlannedSessions();
+  } else {
+    sb2.style.background='var(--tl)';sb2.style.borderColor='var(--teal)';sb2.style.color='var(--td)';sb2.style.fontWeight='500';
+    pb.style.background='transparent';pb.style.borderColor='var(--bdr)';pb.style.color='var(--tm)';pb.style.fontWeight='400';
+    document.getElementById('planned-session-picker').style.display='none';
+    document.getElementById('spontaneous-date').style.display='block';
+    document.getElementById('spontaneous-type').style.display='block';
+  }
+}
+async function loadPlannedSessions(){
+  const uid=document.getElementById('log-runner')?.value;
+  if(!uid)return;
+  const{data}=await sb.from('workouts').select('*').eq('user_id',uid).eq('status','planned').order('date');
+  const sel=document.getElementById('log-planned-session');
+  if(!data||!data.length){sel.innerHTML='<option value="">No planned sessions found</option>';return;}
+  sel.innerHTML='<option value="">Select a session...</option>'+data.map(w=>{
+    const d=new Date(w.date+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+    return`<option value="${w.id}">${d} — ${w.type||'Run'}${w.planned_km?' ('+w.planned_km+'km)':''}</option>`;
+  }).join('');
+}
+function fillFromPlanned(){
+  // just store the selection, actual linking happens on save
+}
+
+// ── CALENDAR ─────────────────────────────────────────────────────────────
+let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
+let calWorkouts=[];
+const RUNNER_COLORS=['#1D9E75','#378ADD','#D4537E','#D85A30','#7F77DD','#BA7517'];
+
+function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
+function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCalendar();}
+
+async function loadCalendar(){
+  const{data}=await sb.from('workouts').select('*,users(name)').order('date');
+  calWorkouts=data||[];
+  renderCalendar();
+}
+
+function renderCalendar(){
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('cal-title').textContent=`${months[calMonth]} ${calYear}`;
+
+  // legend
+  document.getElementById('cal-legend').innerHTML=users.map((u,i)=>`
+    <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--tm)">
+      <div style="width:10px;height:10px;border-radius:50%;background:${RUNNER_COLORS[i%RUNNER_COLORS.length]};flex-shrink:0"></div>
+      ${esc(u.name)}
+    </div>`).join('');
+
+  const first=new Date(calYear,calMonth,1);
+  const last=new Date(calYear,calMonth+1,0);
+  const startDow=(first.getDay()+6)%7; // Monday first
+  const today=new Date();
+
+  // group workouts by date
+  const byDate={};
+  calWorkouts.forEach(w=>{
+    if(!byDate[w.date])byDate[w.date]=[];
+    byDate[w.date].push(w);
+  });
+
+  const dows=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  let html=`<div class="cal-grid">`;
+  dows.forEach(d=>html+=`<div class="cal-dow">${d}</div>`);
+
+  // empty cells before first
+  for(let i=0;i<startDow;i++) html+=`<div class="cal-day other-month"></div>`;
+
+  for(let d=1;d<=last.getDate();d++){
+    const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday=today.getFullYear()===calYear&&today.getMonth()===calMonth&&today.getDate()===d;
+    const ws=byDate[dateStr]||[];
+    const dots=ws.map(w=>{
+      const ui=users.findIndex(u=>u.id===w.user_id);
+      const color=ui>=0?RUNNER_COLORS[ui%RUNNER_COLORS.length]:'#ccc';
+      const opacity=w.status==='done'?'1':w.status==='missed'?'0.3':'0.7';
+      return`<div class="cal-dot" style="background:${color};opacity:${opacity};${w.status==='done'?'box-shadow:0 0 0 1.5px '+color+',0 0 0 2.5px white':''}" title="${w.users?.name}"></div>`;
+    }).join('');
+    html+=`<div class="cal-day${isToday?' today':''}" onclick="showDayDetail('${dateStr}')">
+      <div class="cal-day-num">${d}</div>
+      <div class="cal-dots">${dots}</div>
+    </div>`;
+  }
+  // trailing empty
+  const remaining=(7-((startDow+last.getDate())%7))%7;
+  for(let i=0;i<remaining;i++) html+=`<div class="cal-day other-month"></div>`;
+  html+=`</div>`;
+
+  document.getElementById('cal-grid').innerHTML=html;
+  document.getElementById('cal-day-detail').innerHTML='';
+}
+
+function showDayDetail(dateStr){
+  const ws=calWorkouts.filter(w=>w.date===dateStr);
+  if(!ws.length){document.getElementById('cal-day-detail').innerHTML='';return;}
+  const d=new Date(dateStr+'T00:00:00').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+  const rows=ws.map(w=>{
+    const ui=users.findIndex(u=>u.id===w.user_id);
+    const color=ui>=0?RUNNER_COLORS[ui%RUNNER_COLORS.length]:'#ccc';
+    let statusTag='';
+    if(w.status==='done')statusTag=`<span class="tag tdone" style="margin-top:0;padding:1px 6px;font-size:10px">Done</span>`;
+    else if(w.status==='partial')statusTag=`<span class="tag tpart" style="margin-top:0;padding:1px 6px;font-size:10px">Partial</span>`;
+    else if(w.status==='missed')statusTag=`<span class="tag tmiss" style="margin-top:0;padding:1px 6px;font-size:10px">Missed</span>`;
+    else statusTag=`<span class="tag tplan" style="margin-top:0;padding:1px 6px;font-size:10px">Planned</span>`;
+    return`<div class="cal-runner-row">
+      <div style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0"></div>
+      <div style="width:28px;height:28px;flex-shrink:0">${caricature(w.users?.name||'',28)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500">${esc(w.users?.name||'')}</div>
+        <div style="font-size:12px;color:var(--tm)">${esc(w.type||'')}${w.planned_km?' · '+w.planned_km+'km':''}</div>
+      </div>
+      ${statusTag}
+    </div>`;
+  }).join('');
+
+  // check if multiple runners share this day
+  const uniqueRunners=new Set(ws.map(w=>w.user_id));
+  const combineNote=uniqueRunners.size>1
+    ?`<div style="background:var(--tl);border-radius:var(--rs);padding:8px 12px;margin-bottom:8px;font-size:12px;color:var(--td);font-weight:500">🤝 ${uniqueRunners.size} runners training — good day to combine!</div>`
+    :'';
+
+  document.getElementById('cal-day-detail').innerHTML=`<div class="cal-day-detail-card">
+    <div class="date-title">${d}</div>
+    ${combineNote}${rows}
+  </div>`;
+}
+
 // ── INIT ─────────────────────────────────────────────────────────────────
-loadUsers();setToday('log-date');calcGoal();
+loadUsers();setToday('log-date');calcGoal();setLogType('planned');
 </script>
 </body>
 </html>
