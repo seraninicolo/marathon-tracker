@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Berlin Marathon Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --teal: #1D9E75; --teal-light: #E1F5EE; --teal-dark: #085041;
+    --blue: #378ADD; --blue-light: #E6F1FB; --blue-dark: #185FA5;
+    --coral: #D85A30; --coral-light: #FAECE7; --coral-dark: #993C1D;
+    --purple: #7F77DD; --purple-light: #EEEDFE; --purple-dark: #534AB7;
+    --pink: #D4537E; --pink-light: #FBEAF0; --pink-dark: #993556;
+    --amber: #BA7517; --amber-light: #FAEEDA; --amber-dark: #854F0B;
+    --green: #639922; --green-light: #EAF3DE; --green-dark: #3B6D11;
+    --red: #E24B4A; --red-light: #FCEBEB; --red-dark: #A32D2D;
+    --gray: #888780; --gray-light: #F1EFE8; --gray-dark: #444441;
+    --text: #1a1a1a; --text-muted: #666; --text-hint: #999;
+    --bg: #fff; --bg-secondary: #f7f7f5; --border: rgba(0,0,0,0.1);
+    --radius: 12px; --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg-secondary); color: var(--text); max-width: 430px; margin: 0 auto; min-height: 100vh; }
+  
+  .header { background: var(--bg); padding: 16px; border-bottom: 0.5px solid var(--border); position: sticky; top: 0; z-index: 100; }
+  .header h1 { font-size: 17px; font-weight: 600; }
+  .header .sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .countdown-pill { display: inline-block; background: var(--teal-light); color: var(--teal-dark); font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 20px; margin-top: 6px; }
+
+  .nav { display: flex; background: var(--bg); border-bottom: 0.5px solid var(--border); }
+  .nav button { flex: 1; padding: 12px 4px; font-size: 12px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; font-weight: 500; }
+  .nav button.active { color: var(--teal); border-bottom-color: var(--teal); }
+
+  .page { display: none; padding: 16px; }
+  .page.active { display: block; }
+
+  .section-label { font-size: 11px; font-weight: 600; color: var(--text-hint); text-transform: uppercase; letter-spacing: 0.06em; margin: 16px 0 8px; }
+
+  .card { background: var(--bg); border-radius: var(--radius); border: 0.5px solid var(--border); padding: 14px; margin-bottom: 10px; }
+
+  .runner-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--bg); border-radius: var(--radius); border: 0.5px solid var(--border); margin-bottom: 8px; }
+  .rank-num { font-size: 16px; font-weight: 600; min-width: 22px; color: var(--text-hint); }
+  .rank-num.r1 { color: #BA7517; }
+  .rank-num.r2 { color: var(--gray); }
+  .rank-num.r3 { color: #854F0B; }
+  .avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+  .runner-meta { flex: 1; min-width: 0; }
+  .runner-name { font-size: 14px; font-weight: 500; }
+  .runner-sub { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+  .bar-wrap { height: 3px; background: var(--gray-light); border-radius: 2px; margin-top: 5px; overflow: hidden; }
+  .bar { height: 3px; border-radius: 2px; }
+  .score-col { text-align: right; }
+  .score-big { font-size: 22px; font-weight: 600; }
+  .score-tiny { font-size: 11px; color: var(--text-muted); }
+
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .chip { padding: 6px 12px; border-radius: 20px; font-size: 13px; border: 0.5px solid var(--border); background: transparent; cursor: pointer; color: var(--text-muted); }
+  .chip.active { background: var(--teal-light); color: var(--teal-dark); border-color: var(--teal); font-weight: 500; }
+
+  .workout-card { background: var(--bg); border-radius: var(--radius); border: 0.5px solid var(--border); padding: 12px 14px; margin-bottom: 8px; }
+  .wc-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .wc-title { font-size: 14px; font-weight: 500; }
+  .wc-type { font-size: 12px; color: var(--text-muted); }
+  .wc-row { display: flex; justify-content: space-between; font-size: 13px; margin-top: 3px; color: var(--text-muted); }
+  .wc-row span { color: var(--text); font-weight: 500; }
+  .tag { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; margin-top: 8px; }
+  .tag-done { background: var(--teal-light); color: var(--teal-dark); }
+  .tag-miss { background: var(--red-light); color: var(--red-dark); }
+  .tag-partial { background: var(--amber-light); color: var(--amber-dark); }
+  .tag-planned { background: var(--gray-light); color: var(--gray-dark); }
+
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 12px; font-weight: 500; color: var(--text-muted); margin-bottom: 5px; display: block; }
+  .form-row { display: flex; gap: 8px; }
+  input, select, textarea { width: 100%; padding: 10px 12px; border: 0.5px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; background: var(--bg-secondary); color: var(--text); font-family: inherit; }
+  textarea { resize: none; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--teal); }
+
+  .btn { width: 100%; padding: 13px; border-radius: var(--radius); font-size: 15px; font-weight: 500; cursor: pointer; border: none; }
+  .btn-primary { background: var(--teal); color: white; }
+  .btn-primary:active { opacity: 0.85; }
+  .btn-ghost { background: transparent; border: 0.5px dashed var(--border); color: var(--text-muted); }
+
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .stat-card { background: var(--bg-secondary); border-radius: var(--radius-sm); padding: 12px; }
+  .stat-val { font-size: 22px; font-weight: 600; }
+  .stat-lbl { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  .verdict { padding: 14px; border-radius: var(--radius); margin-top: 12px; }
+  .verdict-good { background: var(--teal-light); }
+  .verdict-bad { background: var(--red-light); }
+  .verdict-title { font-size: 15px; font-weight: 600; }
+  .verdict-good .verdict-title { color: var(--teal-dark); }
+  .verdict-bad .verdict-title { color: var(--red-dark); }
+  .verdict-body { font-size: 13px; margin-top: 4px; }
+  .verdict-good .verdict-body { color: var(--teal); }
+  .verdict-bad .verdict-body { color: var(--red-dark); }
+
+  .range-row { display: flex; gap: 10px; align-items: center; }
+  .range-row input[type=range] { flex: 1; accent-color: var(--teal); }
+  .range-val { font-size: 14px; font-weight: 500; min-width: 40px; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: flex-end; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--bg); border-radius: 20px 20px 0 0; padding: 20px 16px 40px; width: 100%; max-height: 90vh; overflow-y: auto; }
+  .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
+  .modal-title { font-size: 17px; font-weight: 600; margin-bottom: 16px; }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a1a1a; color: white; padding: 10px 20px; border-radius: 20px; font-size: 13px; z-index: 300; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+
+  .empty { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 14px; }
+  .loading { text-align: center; padding: 30px; color: var(--text-muted); font-size: 14px; }
+
+  .add-runner-row { display: flex; gap: 8px; margin-top: 8px; }
+  .add-runner-row input { flex: 1; }
+  .add-runner-row button { padding: 10px 16px; background: var(--teal); color: white; border: none; border-radius: var(--radius-sm); font-size: 14px; cursor: pointer; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+    <div>
+      <h1>Berlin Marathon 2026</h1>
+      <div class="sub">Track your crew's progress</div>
+    </div>
+    <div class="countdown-pill" id="countdown">... days</div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="active" onclick="showPage('board',this)">Board</button>
+  <button onclick="showPage('training',this)">Training</button>
+  <button onclick="showPage('log',this)">Log</button>
+  <button onclick="showPage('goal',this)">Goal</button>
+</div>
+
+<div id="board" class="page active">
+  <div class="section-label">Adherence leaderboard</div>
+  <div id="leaderboard"><div class="loading">Loading...</div></div>
+  <div class="section-label">Runners</div>
+  <div class="add-runner-row">
+    <input id="new-runner-name" placeholder="Add new runner..." maxlength="30">
+    <button onclick="addRunner()">Add</button>
+  </div>
+</div>
+
+<div id="training" class="page">
+  <div class="section-label">Viewing schedule for</div>
+  <div class="chips" id="training-chips"></div>
+  <div id="training-content"><div class="loading">Select a runner above</div></div>
+  <button class="btn btn-ghost" style="margin-top:8px" onclick="openAddWorkout()">+ Add planned workout</button>
+</div>
+
+<div id="log" class="page">
+  <div class="section-label">Log a completed workout</div>
+  <div class="card">
+    <div class="form-group">
+      <label class="form-label">Runner</label>
+      <select id="log-runner"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Date</label>
+      <input type="date" id="log-date">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Workout type</label>
+      <select id="log-type">
+        <option>Easy run</option>
+        <option>Tempo run</option>
+        <option>Long run</option>
+        <option>Intervals</option>
+        <option>Recovery run</option>
+        <option>Race</option>
+        <option>Cross training</option>
+        <option>Other</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Distance (km) & time (min)</label>
+      <div class="form-row">
+        <input type="number" id="log-km" placeholder="12.5" step="0.1" min="0">
+        <input type="number" id="log-min" placeholder="65" min="0">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Location</label>
+      <input type="text" id="log-location" placeholder="e.g. Tiergarten, Berlin">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <textarea id="log-notes" rows="2" placeholder="How did it feel?"></textarea>
+    </div>
+    <button class="btn btn-primary" onclick="saveWorkout()">Save workout</button>
+  </div>
+  <div class="section-label">Recent logs</div>
+  <div id="recent-logs"><div class="loading">Loading...</div></div>
+</div>
+
+<div id="goal" class="page">
+  <div class="section-label">Goal calculator</div>
+  <div class="card">
+    <div class="form-group">
+      <label class="form-label">Runner</label>
+      <select id="goal-runner" onchange="loadGoal()"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Target finish time</label>
+      <div class="form-row">
+        <input type="number" id="goal-h" placeholder="3" min="2" max="7" style="max-width:80px" oninput="calcGoal()">
+        <span style="line-height:42px; color:var(--text-muted); font-size:13px">h</span>
+        <input type="number" id="goal-m" placeholder="45" min="0" max="59" style="max-width:80px" oninput="calcGoal()">
+        <span style="line-height:42px; color:var(--text-muted); font-size:13px">min</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Current weekly km: <span id="km-out" style="font-weight:600; color:var(--text)">50</span></label>
+      <div class="range-row">
+        <input type="range" min="10" max="120" value="50" id="weekly-km" step="1" oninput="document.getElementById('km-out').textContent=this.value; calcGoal()">
+        <span class="range-val" style="color:var(--text-muted); font-size:12px">km/w</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Longest recent run: <span id="lr-out" style="font-weight:600; color:var(--text)">18</span> km</label>
+      <div class="range-row">
+        <input type="range" min="5" max="38" value="18" id="long-run" step="1" oninput="document.getElementById('lr-out').textContent=this.value; calcGoal()">
+      </div>
+    </div>
+    <button class="btn btn-primary" style="margin-top:4px" onclick="saveGoal()">Save my goal</button>
+    <div id="verdict-box"></div>
+  </div>
+</div>
+
+<!-- Add Workout Modal -->
+<div class="modal-overlay" id="add-workout-modal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Add planned workout</div>
+    <div class="form-group">
+      <label class="form-label">Runner</label>
+      <select id="plan-runner"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Date</label>
+      <input type="date" id="plan-date">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Workout type</label>
+      <select id="plan-type">
+        <option>Easy run</option><option>Tempo run</option><option>Long run</option>
+        <option>Intervals</option><option>Recovery run</option><option>Race</option><option>Other</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Planned distance (km)</label>
+      <input type="number" id="plan-km" placeholder="15" step="0.5" min="0">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Target pace (min/km)</label>
+      <input type="text" id="plan-pace" placeholder="5:30">
+    </div>
+    <button class="btn btn-primary" onclick="savePlan()">Add to schedule</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://zcamktlipterhpuiupsj.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjYW1rdGxpcHRlcmhwdWl1cHNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1OTgwNzUsImV4cCI6MjA5MjE3NDA3NX0.gHvM1bbVRmT9ufJO82_yXiNquU4xpEyRd9Mcy94nCRw';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const COLORS = [
+  {bg:'#E1F5EE',text:'#085041'},
+  {bg:'#E6F1FB',text:'#185FA5'},
+  {bg:'#FAECE7',text:'#993C1D'},
+  {bg:'#EEEDFE',text:'#534AB7'},
+  {bg:'#FBEAF0',text:'#993556'},
+  {bg:'#FAEEDA',text:'#854F0B'},
+];
+const SCORE_COLORS = ['#1D9E75','#1D9E75','#1D9E75','#BA7517','#BA7517','#E24B4A'];
+
+let users = [];
+let selectedTrainingUser = null;
+
+function colorFor(i) { return COLORS[i % COLORS.length]; }
+
+// Countdown
+const marathon = new Date('2026-09-27');
+const days = Math.ceil((marathon - new Date()) / 86400000);
+document.getElementById('countdown').textContent = days + ' days';
+
+// Navigation
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'board') loadLeaderboard();
+  if (id === 'log') { loadRecentLogs(); setToday('log-date'); }
+  if (id === 'goal') populateSelect('goal-runner');
+}
+
+function setToday(id) {
+  const d = new Date();
+  document.getElementById(id).value = d.toISOString().split('T')[0];
+}
+
+// Toast
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Load users
+async function loadUsers() {
+  const { data } = await sb.from('users').select('*').order('created_at');
+  users = data || [];
+  populateAllSelects();
+  loadLeaderboard();
+  loadTrainingChips();
+}
+
+function populateAllSelects() {
+  ['log-runner','plan-runner'].forEach(id => populateSelect(id));
+}
+
+function populateSelect(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+}
+
+// Leaderboard
+async function loadLeaderboard() {
+  const { data: workouts } = await sb.from('workouts').select('*');
+  if (!workouts) return;
+
+  const scores = users.map((u, i) => {
+    const uw = workouts.filter(w => w.user_id === u.id);
+    const done = uw.filter(w => w.status === 'done');
+    const total = uw.filter(w => w.status !== 'planned' || new Date(w.date) < new Date());
+    const completed = uw.filter(w => w.status === 'done' || w.status === 'partial');
+    const planned = uw.filter(w => w.status === 'planned');
+    
+    let score = 0;
+    if (done.length > 0) {
+      const avgComp = done.reduce((s, w) => s + (w.compliance_score || 100), 0) / done.length;
+      const adherence = total.length > 0 ? (completed.length / total.length) * 100 : 0;
+      score = Math.round((avgComp * 0.6) + (adherence * 0.4));
+    }
+    
+    const totalPlanned = uw.length;
+    const doneCount = completed.length;
+    return { user: u, score, doneCount, totalPlanned, colorIdx: i };
+  });
+
+  scores.sort((a, b) => b.score - a.score);
+
+  const rankClasses = ['r1','r2','r3'];
+  document.getElementById('leaderboard').innerHTML = scores.map((s, i) => {
+    const c = colorFor(s.colorIdx);
+    const barColor = s.score >= 80 ? '#1D9E75' : s.score >= 60 ? '#BA7517' : '#E24B4A';
+    return `<div class="runner-row">
+      <div class="rank-num ${rankClasses[i] || ''}">${i+1}</div>
+      <div class="avatar" style="background:${c.bg};color:${c.text}">${s.user.avatar || s.user.name.slice(0,2).toUpperCase()}</div>
+      <div class="runner-meta">
+        <div class="runner-name">${s.user.name}</div>
+        <div class="runner-sub">${s.doneCount} of ${s.totalPlanned} sessions done</div>
+        <div class="bar-wrap"><div class="bar" style="width:${s.score}%;background:${barColor}"></div></div>
+      </div>
+      <div class="score-col">
+        <div class="score-big">${s.score}</div>
+        <div class="score-tiny">score</div>
+      </div>
+    </div>`;
+  }).join('') || '<div class="empty">No data yet — log some workouts!</div>';
+}
+
+// Add runner
+async function addRunner() {
+  const name = document.getElementById('new-runner-name').value.trim();
+  if (!name) return;
+  const avatar = name.slice(0,2).toUpperCase();
+  const { error } = await sb.from('users').insert({ name, avatar });
+  if (error) { toast('Error adding runner'); return; }
+  document.getElementById('new-runner-name').value = '';
+  toast(name + ' added!');
+  await loadUsers();
+}
+
+// Training chips
+function loadTrainingChips() {
+  const chips = document.getElementById('training-chips');
+  chips.innerHTML = users.map((u, i) =>
+    `<button class="chip ${i===0?'active':''}" onclick="selectTrainingUser('${u.id}',this)">${u.name}</button>`
+  ).join('');
+  if (users.length > 0) { selectedTrainingUser = users[0].id; loadTrainingSchedule(); }
+}
+
+function selectTrainingUser(id, el) {
+  document.querySelectorAll('#training-chips .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  selectedTrainingUser = id;
+  loadTrainingSchedule();
+}
+
+async function loadTrainingSchedule() {
+  if (!selectedTrainingUser) return;
+  const { data } = await sb.from('workouts').select('*').eq('user_id', selectedTrainingUser).order('date');
+  const workouts = data || [];
+  if (workouts.length === 0) {
+    document.getElementById('training-content').innerHTML = '<div class="empty">No workouts planned yet.<br>Add one below.</div>';
+    return;
+  }
+  document.getElementById('training-content').innerHTML = workouts.map(w => workoutCard(w)).join('');
+}
+
+function workoutCard(w) {
+  const date = new Date(w.date + 'T00:00:00');
+  const dateStr = date.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
+  const isPast = date < new Date();
+  let tagHtml = '';
+  if (w.status === 'done') tagHtml = `<span class="tag tag-done">Done · ${w.compliance_score || 100}pts</span>`;
+  else if (w.status === 'partial') tagHtml = `<span class="tag tag-partial">Partial · ${w.compliance_score || 50}pts</span>`;
+  else if (w.status === 'missed') tagHtml = `<span class="tag tag-miss">Missed · 0pts</span>`;
+  else tagHtml = `<span class="tag tag-planned">${isPast ? 'Not logged' : 'Planned'}</span>`;
+  
+  const actualRow = (w.actual_km || w.actual_time_min) ?
+    `<div class="wc-row">Actual <span>${w.actual_km ? w.actual_km+'km' : ''} ${w.actual_time_min ? '· '+w.actual_time_min+'min' : ''} ${w.actual_pace ? '· '+w.actual_pace+'/km' : ''}</span></div>` : '';
+  const locationRow = w.location ? `<div class="wc-row" style="font-size:12px; margin-top:2px">${w.location}${w.notes ? ' · '+w.notes : ''}</div>` : '';
+
+  return `<div class="workout-card">
+    <div class="wc-head"><div class="wc-title">${dateStr}</div><div class="wc-type">${w.type || ''}</div></div>
+    <div class="wc-row">Planned <span>${w.planned_km ? w.planned_km+'km' : '—'} ${w.planned_pace ? '@ '+w.planned_pace+'/km' : ''}</span></div>
+    ${actualRow}${locationRow}
+    ${tagHtml}
+  </div>`;
+}
+
+// Add planned workout modal
+function openAddWorkout() {
+  populateSelect('plan-runner');
+  setToday('plan-date');
+  document.getElementById('add-workout-modal').classList.add('open');
+}
+function closeModal(e) {
+  if (e.target.classList.contains('modal-overlay')) e.target.classList.remove('open');
+}
+async function savePlan() {
+  const userId = document.getElementById('plan-runner').value;
+  const date = document.getElementById('plan-date').value;
+  const type = document.getElementById('plan-type').value;
+  const km = parseFloat(document.getElementById('plan-km').value) || null;
+  const pace = document.getElementById('plan-pace').value || null;
+  if (!date) { toast('Please select a date'); return; }
+  const { error } = await sb.from('workouts').insert({ user_id: userId, date, type, planned_km: km, planned_pace: pace, status: 'planned' });
+  if (error) { toast('Error saving'); return; }
+  document.getElementById('add-workout-modal').classList.remove('open');
+  toast('Workout added!');
+  loadTrainingSchedule();
+}
+
+// Log workout
+async function saveWorkout() {
+  const userId = document.getElementById('log-runner').value;
+  const date = document.getElementById('log-date').value;
+  const type = document.getElementById('log-type').value;
+  const km = parseFloat(document.getElementById('log-km').value) || null;
+  const min = parseFloat(document.getElementById('log-min').value) || null;
+  const location = document.getElementById('log-location').value || null;
+  const notes = document.getElementById('log-notes').value || null;
+  if (!date || !km) { toast('Date and distance required'); return; }
+
+  const pace = (km && min) ? (min/km).toFixed(2) : null;
+  const paceStr = pace ? Math.floor(pace) + ':' + String(Math.round((pace%1)*60)).padStart(2,'0') : null;
+
+  // Find matching planned workout
+  const { data: planned } = await sb.from('workouts')
+    .select('*').eq('user_id', userId).eq('date', date).eq('status','planned').limit(1);
+
+  let compliance = 100;
+  let status = 'done';
+  if (planned && planned.length > 0) {
+    const p = planned[0];
+    if (p.planned_km) {
+      const ratio = km / p.planned_km;
+      compliance = Math.min(100, Math.round(ratio * 100));
+      if (compliance < 70) status = 'partial';
+      if (km === 0) status = 'missed';
+    }
+    // Update existing planned workout
+    await sb.from('workouts').update({
+      actual_km: km, actual_time_min: min, actual_pace: paceStr,
+      location, notes, status, compliance_score: compliance
+    }).eq('id', p.id);
+  } else {
+    // Insert new
+    await sb.from('workouts').insert({
+      user_id: userId, date, type, actual_km: km, actual_time_min: min,
+      actual_pace: paceStr, location, notes, status: 'done', compliance_score: 100
+    });
+  }
+
+  toast('Workout saved! Score: ' + compliance);
+  ['log-km','log-min','log-location','log-notes'].forEach(id => document.getElementById(id).value = '');
+  loadRecentLogs();
+  loadLeaderboard();
+}
+
+async function loadRecentLogs() {
+  const { data } = await sb.from('workouts').select('*, users(name)').neq('status','planned').order('date', {ascending:false}).limit(10);
+  if (!data || data.length === 0) { document.getElementById('recent-logs').innerHTML = '<div class="empty">No logs yet</div>'; return; }
+  document.getElementById('recent-logs').innerHTML = data.map(w => {
+    const date = new Date(w.date + 'T00:00:00').toLocaleDateString('en-GB', {weekday:'short',day:'numeric',month:'short'});
+    const tagClass = w.status === 'done' ? 'tag-done' : w.status === 'partial' ? 'tag-partial' : 'tag-miss';
+    return `<div class="workout-card">
+      <div class="wc-head"><div class="wc-title">${w.users?.name || ''} — ${date}</div><div class="wc-type">${w.type||''}</div></div>
+      <div class="wc-row">${w.actual_km||'—'}km <span>${w.actual_time_min ? w.actual_time_min+'min' : ''} ${w.actual_pace ? '· '+w.actual_pace+'/km' : ''}</span></div>
+      ${w.location ? `<div class="wc-row" style="font-size:12px;color:var(--text-muted)">${w.location}${w.notes?' · '+w.notes:''}</div>` : ''}
+      <span class="tag ${tagClass}">Score: ${w.compliance_score ?? 100}</span>
+    </div>`;
+  }).join('');
+}
+
+// Goal calculator
+async function loadGoal() {
+  const uid = document.getElementById('goal-runner').value;
+  const { data } = await sb.from('users').select('goal_hours,goal_minutes').eq('id',uid).single();
+  if (data?.goal_hours) {
+    document.getElementById('goal-h').value = data.goal_hours;
+    document.getElementById('goal-m').value = data.goal_minutes || 0;
+    calcGoal();
+  }
+}
+
+async function saveGoal() {
+  const uid = document.getElementById('goal-runner').value;
+  const h = parseInt(document.getElementById('goal-h').value) || null;
+  const m = parseInt(document.getElementById('goal-m').value) || 0;
+  await sb.from('users').update({ goal_hours: h, goal_minutes: m }).eq('id', uid);
+  toast('Goal saved!');
+  calcGoal();
+}
+
+function calcGoal() {
+  const h = parseFloat(document.getElementById('goal-h').value) || 3;
+  const m = parseFloat(document.getElementById('goal-m').value) || 45;
+  const totalMin = h * 60 + m;
+  const pacePerKm = totalMin / 42.195;
+  const weeklyKm = parseFloat(document.getElementById('weekly-km').value);
+  const longRun = parseFloat(document.getElementById('long-run').value);
+  const marathon = new Date('2026-09-27');
+  const weeksLeft = Math.floor((marathon - new Date()) / (7*86400000));
+
+  const reqWeekly = totalMin < 210 ? 70 : totalMin < 240 ? 55 : totalMin < 270 ? 45 : 35;
+  const reqLong = totalMin < 210 ? 32 : totalMin < 240 ? 28 : totalMin < 270 ? 25 : 22;
+  const onTrack = weeklyKm >= reqWeekly * 0.85 && longRun >= reqLong * 0.85;
+
+  const paceStr = Math.floor(pacePerKm) + ':' + String(Math.round((pacePerKm % 1) * 60)).padStart(2,'0');
+  const box = document.getElementById('verdict-box');
+  if (onTrack) {
+    box.innerHTML = `<div class="verdict verdict-good"><div class="verdict-title">On track</div><div class="verdict-body">Target pace: ${paceStr}/km · ${weeksLeft} weeks to go. Volume supports your goal. Keep the long run progressing by ~1km/week.</div></div>`;
+  } else {
+    const gapKm = Math.max(0, Math.round(reqWeekly - weeklyKm));
+    const gapLr = Math.max(0, Math.round(reqLong - longRun));
+    const msg = [];
+    if (gapKm > 0) msg.push(`add ~${gapKm}km/week`);
+    if (gapLr > 0) msg.push(`extend long run to ${reqLong}km`);
+    box.innerHTML = `<div class="verdict verdict-bad"><div class="verdict-title">Not yet on track</div><div class="verdict-body">Target pace: ${paceStr}/km · You need to ${msg.join(' and ')}. ${weeksLeft > 16 ? 'Plenty of time — ramp up gradually.' : weeksLeft > 8 ? 'Focus on consistency now.' : 'Time is tight — prioritize key sessions.'}</div></div>`;
+  }
+}
+
+// Init
+loadUsers();
+setToday('log-date');
+calcGoal();
+</script>
+</body>
+</html>
