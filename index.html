@@ -330,7 +330,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
 <div id="goal" class="page">
   <div class="slbl">Goal calculator</div>
   <div class="card">
-    <div class="fg"><label class="fl">Runner</label><select id="goal-runner" onchange="loadGoal()"></select></div>
+    <div class="fg" style="display:flex;align-items:center;gap:10px;padding:4px 0">
+      <div id="goal-user-face" style="width:36px;height:36px;flex-shrink:0"></div>
+      <div style="font-size:14px;font-weight:500" id="goal-user-name"></div>
+    </div>
     <div class="fg"><label class="fl">Target finish time</label>
       <div class="fr">
         <input type="number" id="goal-h" placeholder="3" min="2" max="7" style="max-width:80px" oninput="calcGoal()">
@@ -514,7 +517,7 @@ function showPage(id,btn){
   if(id==='manage'){loadManage();}
   if(id==='calendar'){loadCalendar();}
   if(id==='log'){loadRecentLogs();setToday('log-date');setLogType('planned');loadPlannedSessions();}
-  if(id==='goal')popSelect('goal-runner');
+  if(id==='goal'){loadGoal();}
   if(id!=='race'&&raceAnim){cancelAnimationFrame(raceAnim);raceAnim=null;}
 }
 
@@ -959,12 +962,18 @@ async function loadRecentLogs(){
 
 // ── GOAL ─────────────────────────────────────────────────────────────────
 async function loadGoal(){
-  const uid=document.getElementById('goal-runner').value;
+  if(!currentUser)return;
+  const uid=currentUser.id;
+  const el=document.getElementById('goal-user-face');
+  const nl=document.getElementById('goal-user-name');
+  if(el)el.innerHTML=caricature(currentUser.name,36);
+  if(nl)nl.textContent=currentUser.name;
   const{data}=await sb.from('users').select('goal_hours,goal_minutes').eq('id',uid).single();
   if(data?.goal_hours){document.getElementById('goal-h').value=data.goal_hours;document.getElementById('goal-m').value=data.goal_minutes||0;calcGoal();}
 }
 async function saveGoal(){
-  const uid=document.getElementById('goal-runner').value;
+  if(!currentUser)return;
+  const uid=currentUser.id;
   const h=parseInt(document.getElementById('goal-h').value)||null;
   const m=parseInt(document.getElementById('goal-m').value)||0;
   await sb.from('users').update({goal_hours:h,goal_minutes:m}).eq('id',uid);
@@ -1256,7 +1265,7 @@ function showApp(){
   document.getElementById('userbar-name').textContent='Logged in as '+currentUser.name;
   document.getElementById('userbar-face').innerHTML=caricature(currentUser.name,24);
   loadUsers();setToday('log-date');calcGoal();setLogType('planned');
-  setTimeout(startRace,800);
+  setTimeout(()=>{startRace();loadGoal();},800);
 }
 function logout(){
   localStorage.removeItem('bm_user');
