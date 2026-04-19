@@ -147,9 +147,75 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
 /* manage tab */
 .manage-filter{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
 .manage-filter select{flex:1;min-width:120px;}
+/* login screen */
+.login-screen{position:fixed;inset:0;background:var(--bg2);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;}
+.login-screen.hidden{display:none;}
+.login-logo{font-size:22px;font-weight:700;color:var(--teal);text-align:center;margin-bottom:4px;}
+.login-sub{font-size:13px;color:var(--tm);text-align:center;margin-bottom:32px;}
+.runner-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:320px;margin-bottom:24px;}
+.runner-btn{background:var(--bg);border:0.5px solid var(--bdr);border-radius:var(--r);padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;}
+.runner-btn.selected{border-color:var(--teal);border-width:2px;background:var(--tl);}
+.runner-btn span{font-size:13px;font-weight:500;color:var(--text);}
+.pin-row{display:flex;gap:10px;justify-content:center;margin-bottom:20px;}
+.pin-dot{width:14px;height:14px;border-radius:50%;background:var(--gl);border:1.5px solid var(--bdr);transition:background 0.15s;}
+.pin-dot.filled{background:var(--teal);border-color:var(--teal);}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:240px;}
+.pin-key{background:var(--bg);border:0.5px solid var(--bdr);border-radius:var(--r);padding:16px;font-size:20px;font-weight:500;cursor:pointer;text-align:center;color:var(--text);}
+.pin-key:active{background:var(--tl);}
+.pin-key.del{font-size:16px;color:var(--tm);}
+.login-error{font-size:13px;color:var(--rd);text-align:center;min-height:20px;margin-bottom:8px;}
+.login-step{display:none;width:100%;align-items:center;flex-direction:column;}
+.login-step.active{display:flex;}
+.userbar{display:flex;align-items:center;gap:8px;padding:6px 16px;background:var(--tl);border-bottom:0.5px solid var(--teal);}
+.userbar span{font-size:12px;font-weight:500;color:var(--td);flex:1;}
+.userbar button{font-size:11px;color:var(--td);background:none;border:none;cursor:pointer;padding:2px 8px;border-radius:20px;border:0.5px solid var(--teal);}
 </style>
 </head>
 <body>
+
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="login-screen">
+  <div class="login-logo">The Boy Berlin Marathon 2026</div>
+  <div class="login-sub">Who are you?</div>
+
+  <!-- Step 1: pick runner -->
+  <div class="login-step active" id="step-pick">
+    <div class="runner-grid" id="runner-grid"></div>
+  </div>
+
+  <!-- Step 2: enter PIN -->
+  <div class="login-step" id="step-pin">
+    <div style="font-size:15px;font-weight:600;margin-bottom:20px;color:var(--text)" id="pin-greeting"></div>
+    <div class="pin-row">
+      <div class="pin-dot" id="pd0"></div>
+      <div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div>
+      <div class="pin-dot" id="pd3"></div>
+    </div>
+    <div class="login-error" id="pin-error"></div>
+    <div class="pin-pad">
+      <button class="pin-key" onclick="pinKey('1')">1</button>
+      <button class="pin-key" onclick="pinKey('2')">2</button>
+      <button class="pin-key" onclick="pinKey('3')">3</button>
+      <button class="pin-key" onclick="pinKey('4')">4</button>
+      <button class="pin-key" onclick="pinKey('5')">5</button>
+      <button class="pin-key" onclick="pinKey('6')">6</button>
+      <button class="pin-key" onclick="pinKey('7')">7</button>
+      <button class="pin-key" onclick="pinKey('8')">8</button>
+      <button class="pin-key" onclick="pinKey('9')">9</button>
+      <button class="pin-key del" onclick="pinBack()">←</button>
+      <button class="pin-key" onclick="pinKey('0')">0</button>
+      <button class="pin-key del" onclick="pinCancel()">✕</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOGGED IN USER BAR -->
+<div class="userbar" id="userbar" style="display:none">
+  <div id="userbar-face" style="width:24px;height:24px;flex-shrink:0"></div>
+  <span id="userbar-name"></span>
+  <button onclick="logout()">Log out</button>
+</div>
 
 <div class="hdr">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;">
@@ -203,8 +269,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
 <div id="manage" class="page">
   <div class="slbl">Edit or delete workouts</div>
   <div class="manage-filter">
-    <select id="manage-runner" onchange="loadManage()"></select>
-    <select id="manage-status" onchange="loadManage()">
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;flex:1">
+      <div id="manage-user-face" style="width:28px;height:28px;flex-shrink:0"></div>
+      <span style="font-size:13px;font-weight:500" id="manage-user-name"></span>
+    </div>
+    <select id="manage-status" onchange="loadManage()" style="flex:0 0 auto;min-width:120px">
       <option value="">All statuses</option>
       <option value="planned">Planned</option>
       <option value="done">Done</option>
@@ -219,7 +288,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
 <div id="log" class="page">
   <div class="slbl">Log a completed workout</div>
   <div class="card">
-    <div class="fg"><label class="fl">Runner</label><select id="log-runner" onchange="loadPlannedSessions()"></select></div>
+    <div class="fg" style="display:flex;align-items:center;gap:10px;padding:4px 0">
+      <div id="log-user-face" style="width:36px;height:36px;flex-shrink:0"></div>
+      <div style="font-size:14px;font-weight:500" id="log-user-name"></div>
+    </div>
     <div class="fg"><label class="fl">Was this planned or spontaneous?</label>
       <div style="display:flex;gap:8px;">
         <button id="btn-planned" onclick="setLogType('planned')" style="flex:1;padding:10px;border-radius:var(--rs);border:0.5px solid var(--teal);background:var(--tl);color:var(--td);font-size:14px;font-weight:500;cursor:pointer;">Planned</button>
@@ -343,7 +415,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
     <div class="mhdl"></div>
     <div class="mtitle" id="modal-title">Add planned workout</div>
     <input type="hidden" id="edit-workout-id">
-    <div class="fg"><label class="fl">Runner</label><select id="plan-runner"></select></div>
     <div class="fg"><label class="fl">Date</label><input type="date" id="plan-date"></div>
     <div class="fg"><label class="fl">Workout type</label>
       <select id="plan-type">
@@ -440,7 +511,7 @@ function showPage(id,btn){
   if(id==='race')startRace();
   if(id==='board')loadLeaderboard();
   if(id==='training'){renderUploadButtons();}
-  if(id==='manage'){popSelect('manage-runner');loadManage();}
+  if(id==='manage'){loadManage();}
   if(id==='calendar'){loadCalendar();}
   if(id==='log'){loadRecentLogs();setToday('log-date');setLogType('planned');loadPlannedSessions();}
   if(id==='goal')popSelect('goal-runner');
@@ -451,8 +522,18 @@ function showPage(id,btn){
 async function loadUsers(){
   const{data}=await sb.from('users').select('*').order('created_at');
   users=data||[];
-  ['log-runner','plan-runner','manage-runner'].forEach(id=>popSelect(id));
   loadLeaderboard();loadTrainingChips();renderUploadButtons();
+  // update current user display panels
+  if(currentUser){
+    const el=document.getElementById('log-user-face');
+    const nl=document.getElementById('log-user-name');
+    if(el)el.innerHTML=caricature(currentUser.name,36);
+    if(nl)nl.textContent=currentUser.name;
+    const mf=document.getElementById('manage-user-face');
+    const mn=document.getElementById('manage-user-name');
+    if(mf)mf.innerHTML=caricature(currentUser.name,28);
+    if(mn)mn.textContent=currentUser.name;
+  }
 }
 function popSelect(id){
   const el=document.getElementById(id);if(!el)return;
@@ -493,7 +574,6 @@ async function loadLeaderboard(){
   const rc=['r1','r2','r3'];
   document.getElementById('leaderboard').innerHTML=scores.map((s,i)=>{
     const bc=s.score>=80?'#1D9E75':s.score>=60?'#BA7517':'#E24B4A';
-    const uOpts=users.map(u=>`<option value="${esc(u.name)}">${esc(u.name)}</option>`).join('');
     // Last comment per commenter, excluding self-comments (author == target runner)
     const targetComments=comments.filter(c=>c.target_user_id===s.u.id&&c.author_name!==s.u.name);
     // Group by author, keep only the latest
@@ -519,9 +599,8 @@ async function loadLeaderboard(){
       </div>
       <div class="csec">${commHtml}
         <div class="cinrow">
-          <select id="csu-${uid}">${uOpts}</select>
-          <input id="cu-${uid}" type="text" placeholder="Motivate ${esc(s.u.name)}..." maxlength="140" onkeydown="if(event.key==='Enter')postComment('cu-${uid}','csu-${uid}','${uid}',null)">
-          <button onclick="postComment('cu-${uid}','csu-${uid}','${uid}',null)">Send</button>
+          <input id="cu-${uid}" type="text" placeholder="Motivate ${esc(s.u.name)}..." maxlength="140" onkeydown="if(event.key==='Enter')postComment('cu-${uid}',null,'${uid}',null)">
+          <button onclick="postComment('cu-${uid}',null,'${uid}',null)">Send</button>
         </div>
       </div>
     </div>`;
@@ -671,8 +750,9 @@ async function startRace(){
 
 // ── COMMENTS ─────────────────────────────────────────────────────────────
 async function postComment(inId,selId,targetUid,workoutId){
+  if(!currentUser){toast('Not logged in');return;}
   const msg=document.getElementById(inId)?.value.trim();
-  const author=document.getElementById(selId)?.value;
+  const author=currentUser.name;
   if(!msg||!author)return;
   const payload={author_name:author,message:msg};
   if(targetUid&&targetUid!=='null')payload.target_user_id=targetUid;
@@ -717,7 +797,6 @@ function wCard(w,comments=[]){
   else tag=`<span class="tag tplan">${isPast?'Not logged':'Planned'}</span>`;
   const actRow=(w.actual_km||w.actual_time_min)?`<div class="wcr">Actual <span>${w.actual_km?w.actual_km+'km':''} ${w.actual_time_min?'· '+w.actual_time_min+'min':''} ${w.actual_pace?'· '+w.actual_pace+'/km':''}</span></div>`:'';
   const locRow=w.location?`<div class="wcr" style="font-size:12px;margin-top:2px">${esc(w.location)}${w.notes?' · '+esc(w.notes):''}</div>`:'';
-  const uOpts=users.map(u=>`<option value="${esc(u.name)}">${esc(u.name)}</option>`).join('');
   const commHtml=comments.map(c=>{
     const cd=c.created_at?new Date(c.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
     return`<div class="citem"><div style="width:26px;height:26px;flex-shrink:0">${caricature(c.author_name,26)}</div><div class="cbubble"><div class="cauthor">${esc(c.author_name)}<span style="font-weight:400;color:var(--th);margin-left:6px">${cd}</span></div><div class="cmsg">${esc(c.message)}</div></div></div>`;
@@ -734,18 +813,17 @@ function wCard(w,comments=[]){
   </div>
   <div class="csec">${commHtml}
     <div class="cinrow">
-      <select id="csw-${wid}">${uOpts}</select>
-      <input id="cw-${wid}" type="text" placeholder="Comment..." maxlength="140" onkeydown="if(event.key==='Enter')postComment('cw-${wid}','csw-${wid}',null,'${wid}')">
-      <button onclick="postComment('cw-${wid}','csw-${wid}',null,'${wid}')">Send</button>
+      <input id="cw-${wid}" type="text" placeholder="Comment..." maxlength="140" onkeydown="if(event.key==='Enter')postComment('cw-${wid}',null,null,'${wid}')">
+      <button onclick="postComment('cw-${wid}',null,null,'${wid}')">Send</button>
     </div>
   </div></div>`;
 }
 
 // ── MANAGE TAB ───────────────────────────────────────────────────────────
 async function loadManage(){
-  const uid=document.getElementById('manage-runner')?.value;
-  const status=document.getElementById('manage-status')?.value;
-  if(!uid)return;
+  if(!currentUser)return;
+  const uid=currentUser.id;
+  const status=document.getElementById('manage-status')?.value||'';
   let q=sb.from('workouts').select('*').eq('user_id',uid).order('date');
   if(status)q=q.eq('status',status);
   const{data:ws}=await q;
@@ -773,7 +851,6 @@ async function openEditWorkout(id){
   if(!w)return;
   document.getElementById('modal-title').textContent='Edit workout';
   document.getElementById('edit-workout-id').value=id;
-  document.getElementById('plan-runner').value=w.user_id;
   document.getElementById('plan-date').value=w.date;
   document.getElementById('plan-type').value=w.type||'Easy run';
   document.getElementById('plan-km').value=w.planned_km||'';
@@ -782,19 +859,21 @@ async function openEditWorkout(id){
   document.getElementById('workout-modal').classList.add('open');
 }
 function openAddWorkout(){
+  if(!currentUser)return;
   document.getElementById('modal-title').textContent='Add planned workout';
   document.getElementById('edit-workout-id').value='';
   document.getElementById('plan-km').value='';
   document.getElementById('plan-pace').value='';
   document.getElementById('delete-btn').style.display='none';
-  popSelect('plan-runner');setToday('plan-date');
+  setToday('plan-date');
   document.getElementById('workout-modal').classList.add('open');
 }
 function closeModal(e){if(e.target.classList.contains('movl'))e.target.classList.remove('open');}
 
 async function saveWorkoutPlan(){
+  if(!currentUser)return;
   const id=document.getElementById('edit-workout-id').value;
-  const uid=document.getElementById('plan-runner').value;
+  const uid=currentUser.id;
   const date=document.getElementById('plan-date').value;
   const type=document.getElementById('plan-type').value;
   const km=parseFloat(document.getElementById('plan-km').value)||null;
@@ -825,7 +904,8 @@ async function deleteWorkout(){
 
 // ── LOG WORKOUT ──────────────────────────────────────────────────────────
 async function saveWorkout(){
-  const uid=document.getElementById('log-runner').value;
+  if(!currentUser){toast('Not logged in');return;}
+  const uid=currentUser.id;
   const km=parseFloat(document.getElementById('log-km').value)||null;
   const min=parseFloat(document.getElementById('log-min').value)||null;
   const location=document.getElementById('log-location').value||null;
@@ -913,15 +993,16 @@ function calcGoal(){
 // ── PER-RUNNER UPLOAD ────────────────────────────────────────────────────
 function renderUploadButtons(){
   const wrap=document.getElementById('per-runner-upload');
-  if(!wrap||!users.length)return;
-  wrap.innerHTML=`<div class="slbl" style="margin-top:4px">Upload individual plans</div>`+
-    users.map(u=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+  if(!wrap||!currentUser)return;
+  const u=currentUser;
+  wrap.innerHTML=`<div class="slbl" style="margin-top:4px">Upload your training plan</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
       <div style="width:28px;height:28px;flex-shrink:0">${caricature(u.name,28)}</div>
       <span style="font-size:13px;font-weight:500;flex:1">${esc(u.name)}</span>
       <input type="file" id="up-${u.id}" accept=".xlsx,.xls" style="display:none" onchange="handleRunnerUpload(event,'${u.id}')">
       <button onclick="document.getElementById('up-${u.id}').click()" style="padding:6px 12px;background:transparent;border:0.5px solid #1D9E75;color:#1D9E75;border-radius:var(--rs);font-size:12px;cursor:pointer;">↑ Upload</button>
       <span id="upst-${u.id}" style="font-size:11px;color:var(--tm);min-width:50px;text-align:right"></span>
-    </div>`).join('');
+    </div>`;
 }
 async function handleRunnerUpload(event,userId){
   const file=event.target.files[0];if(!file)return;
@@ -981,8 +1062,8 @@ function setLogType(type){
   }
 }
 async function loadPlannedSessions(){
-  const uid=document.getElementById('log-runner')?.value;
-  if(!uid)return;
+  if(!currentUser)return;
+  const uid=currentUser.id;
   const{data}=await sb.from('workouts').select('*').eq('user_id',uid).eq('status','planned').order('date');
   const sel=document.getElementById('log-planned-session');
   if(!data||!data.length){sel.innerHTML='<option value="">No planned sessions found</option>';return;}
@@ -1098,10 +1179,99 @@ function showDayDetail(dateStr){
   </div>`;
 }
 
+// ── AUTH ─────────────────────────────────────────────────────────────────
+let currentUser=null;
+let pinBuffer='';
+let pinCandidate=null;
+
+function initAuth(){
+  const saved=localStorage.getItem('bm_user');
+  if(saved){
+    try{
+      currentUser=JSON.parse(saved);
+      showApp();
+      return;
+    }catch(e){}
+  }
+  loadLoginScreen();
+}
+
+async function loadLoginScreen(){
+  const{data}=await sb.from('users').select('id,name,avatar').order('created_at');
+  users=data||[];
+  const grid=document.getElementById('runner-grid');
+  grid.innerHTML=users.map(u=>`
+    <div class="runner-btn" onclick="selectRunner('${u.id}')">
+      <div style="width:48px;height:48px">${caricature(u.name,48)}</div>
+      <span>${esc(u.name)}</span>
+    </div>`).join('');
+}
+
+function selectRunner(uid){
+  pinCandidate=users.find(u=>u.id===uid);
+  if(!pinCandidate)return;
+  document.querySelectorAll('.runner-btn').forEach(b=>b.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  pinBuffer='';
+  updatePinDots();
+  document.getElementById('pin-greeting').textContent='Enter your PIN, '+pinCandidate.name;
+  document.getElementById('pin-error').textContent='';
+  document.getElementById('step-pick').classList.remove('active');
+  document.getElementById('step-pin').classList.add('active');
+}
+
+function pinKey(d){
+  if(pinBuffer.length>=4)return;
+  pinBuffer+=d;
+  updatePinDots();
+  if(pinBuffer.length===4)setTimeout(checkPin,150);
+}
+function pinBack(){pinBuffer=pinBuffer.slice(0,-1);updatePinDots();}
+function pinCancel(){
+  pinBuffer='';pinCandidate=null;
+  document.getElementById('step-pin').classList.remove('active');
+  document.getElementById('step-pick').classList.add('active');
+  updatePinDots();
+}
+function updatePinDots(){
+  for(let i=0;i<4;i++){
+    const d=document.getElementById('pd'+i);
+    d.classList.toggle('filled',i<pinBuffer.length);
+  }
+}
+async function checkPin(){
+  const{data}=await sb.from('users').select('pin').eq('id',pinCandidate.id).single();
+  if(data?.pin===pinBuffer){
+    currentUser=pinCandidate;
+    localStorage.setItem('bm_user',JSON.stringify(currentUser));
+    showApp();
+  } else {
+    document.getElementById('pin-error').textContent='Wrong PIN — try again';
+    pinBuffer='';updatePinDots();
+  }
+}
+function showApp(){
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('userbar').style.display='flex';
+  document.getElementById('userbar-name').textContent='Logged in as '+currentUser.name;
+  document.getElementById('userbar-face').innerHTML=caricature(currentUser.name,24);
+  loadUsers();setToday('log-date');calcGoal();setLogType('planned');
+  setTimeout(startRace,800);
+}
+function logout(){
+  localStorage.removeItem('bm_user');
+  currentUser=null;
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('userbar').style.display='none';
+  document.getElementById('step-pin').classList.remove('active');
+  document.getElementById('step-pick').classList.add('active');
+  pinBuffer='';pinCandidate=null;updatePinDots();
+  if(raceAnim){cancelAnimationFrame(raceAnim);raceAnim=null;}
+  loadLoginScreen();
+}
+
 // ── INIT ─────────────────────────────────────────────────────────────────
-loadUsers();setToday('log-date');calcGoal();setLogType('planned');
-// Race is the first tab — start it after users load
-setTimeout(startRace, 800);
+initAuth();
 </script>
 </body>
 </html>
