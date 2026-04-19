@@ -497,8 +497,13 @@ async function loadLeaderboard(){
     const uOpts=users.map(u=>`<option value="${esc(u.name)}">${esc(u.name)}</option>`).join('');
     const commHtml=(comments.filter(c=>c.target_user_id===s.u.id)||[]).map(c=>{
       const cd=c.created_at?new Date(c.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
-      return`<div class="citem"><div style="width:26px;height:26px;flex-shrink:0">${caricature(c.author_name,26)}</div>
-      <div class="cbubble"><div class="cauthor">${esc(c.author_name)}<span style="font-weight:400;color:var(--th);margin-left:6px">${cd}</span></div><div class="cmsg">${esc(c.message)}</div></div></div>`;
+      return`<div class="citem" id="ci-${c.id}"><div style="width:26px;height:26px;flex-shrink:0">${caricature(c.author_name,26)}</div>
+      <div class="cbubble"><div class="cauthor">${esc(c.author_name)}<span style="font-weight:400;color:var(--th);margin-left:6px">${cd}</span>
+        <span style="margin-left:8px;gap:6px;display:inline-flex">
+          <button onclick="editComment('${c.id}','${c.target_user_id||''}',null)" style="font-size:10px;color:var(--teal);background:none;border:none;cursor:pointer;padding:0">Edit</button>
+          <button onclick="deleteComment('${c.id}')" style="font-size:10px;color:var(--rd);background:none;border:none;cursor:pointer;padding:0">Delete</button>
+        </span>
+      </div><div class="cmsg" id="cmsg-${c.id}">${esc(c.message)}</div></div></div>`;
     }).join('');
     const uid=s.u.id;
     return`<div class="rrow">
@@ -649,7 +654,25 @@ async function startRace(){
 }
 
 // ── COMMENTS ─────────────────────────────────────────────────────────────
-async function postComment(inId,selId,targetUid,workoutId){
+async function editComment(id, targetUid, workoutId){
+  const msgEl=document.getElementById('cmsg-'+id);
+  if(!msgEl)return;
+  const current=msgEl.textContent;
+  const newMsg=prompt('Edit your message:',current);
+  if(!newMsg||newMsg.trim()===current)return;
+  const{error}=await sb.from('comments').update({message:newMsg.trim()}).eq('id',id);
+  if(error){toast('Error updating');return;}
+  toast('Updated!');
+  if(workoutId&&workoutId!=='null')loadTrainingSchedule();
+  else loadLeaderboard();
+}
+async function deleteComment(id){
+  if(!confirm('Delete this comment?'))return;
+  await sb.from('comments').delete().eq('id',id);
+  toast('Deleted');
+  loadLeaderboard();
+  loadTrainingSchedule();
+}
   const msg=document.getElementById(inId)?.value.trim();
   const author=document.getElementById(selId)?.value;
   if(!msg||!author)return;
@@ -699,7 +722,12 @@ function wCard(w,comments=[]){
   const uOpts=users.map(u=>`<option value="${esc(u.name)}">${esc(u.name)}</option>`).join('');
   const commHtml=comments.map(c=>{
     const cd=c.created_at?new Date(c.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
-    return`<div class="citem"><div style="width:26px;height:26px;flex-shrink:0">${caricature(c.author_name,26)}</div><div class="cbubble"><div class="cauthor">${esc(c.author_name)}<span style="font-weight:400;color:var(--th);margin-left:6px">${cd}</span></div><div class="cmsg">${esc(c.message)}</div></div></div>`;
+    return`<div class="citem" id="ci-${c.id}"><div style="width:26px;height:26px;flex-shrink:0">${caricature(c.author_name,26)}</div><div class="cbubble"><div class="cauthor">${esc(c.author_name)}<span style="font-weight:400;color:var(--th);margin-left:6px">${cd}</span>
+      <span style="margin-left:8px;gap:6px;display:inline-flex">
+        <button onclick="editComment('${c.id}',null,'${c.workout_id||''}')" style="font-size:10px;color:var(--teal);background:none;border:none;cursor:pointer;padding:0">Edit</button>
+        <button onclick="deleteComment('${c.id}')" style="font-size:10px;color:var(--rd);background:none;border:none;cursor:pointer;padding:0">Delete</button>
+      </span>
+    </div><div class="cmsg" id="cmsg-${c.id}">${esc(c.message)}</div></div></div>`;
   }).join('');
   const wid=w.id;
   return`<div class="wcard"><div class="wc-inner">
