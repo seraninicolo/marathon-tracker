@@ -5,128 +5,122 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Berlin Marathon Tracker</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
-  :root {
-    --teal: #1D9E75; --teal-light: #E1F5EE; --teal-dark: #085041;
-    --blue: #378ADD; --blue-light: #E6F1FB; --blue-dark: #185FA5;
-    --coral: #D85A30; --coral-light: #FAECE7; --coral-dark: #993C1D;
-    --purple: #7F77DD; --purple-light: #EEEDFE; --purple-dark: #534AB7;
-    --pink: #D4537E; --pink-light: #FBEAF0; --pink-dark: #993556;
-    --amber: #BA7517; --amber-light: #FAEEDA; --amber-dark: #854F0B;
-    --green: #639922; --green-light: #EAF3DE; --green-dark: #3B6D11;
-    --red: #E24B4A; --red-light: #FCEBEB; --red-dark: #A32D2D;
-    --gray: #888780; --gray-light: #F1EFE8; --gray-dark: #444441;
-    --text: #1a1a1a; --text-muted: #666; --text-hint: #999;
-    --bg: #fff; --bg-secondary: #f7f7f5; --border: rgba(0,0,0,0.1);
-    --radius: 12px; --radius-sm: 8px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg-secondary); color: var(--text); max-width: 430px; margin: 0 auto; min-height: 100vh; }
-  
-  .header { background: var(--bg); padding: 16px; border-bottom: 0.5px solid var(--border); position: sticky; top: 0; z-index: 100; }
-  .header h1 { font-size: 17px; font-weight: 600; }
-  .header .sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-  .countdown-pill { display: inline-block; background: var(--teal-light); color: var(--teal-dark); font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 20px; margin-top: 6px; }
-
-  .nav { display: flex; background: var(--bg); border-bottom: 0.5px solid var(--border); }
-  .nav button { flex: 1; padding: 12px 4px; font-size: 12px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; font-weight: 500; }
-  .nav button.active { color: var(--teal); border-bottom-color: var(--teal); }
-
-  .page { display: none; padding: 16px; }
-  .page.active { display: block; }
-
-  .section-label { font-size: 11px; font-weight: 600; color: var(--text-hint); text-transform: uppercase; letter-spacing: 0.06em; margin: 16px 0 8px; }
-
-  .card { background: var(--bg); border-radius: var(--radius); border: 0.5px solid var(--border); padding: 14px; margin-bottom: 10px; }
-
-  .runner-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--bg); border-radius: var(--radius); border: 0.5px solid var(--border); margin-bottom: 8px; }
-  .rank-num { font-size: 16px; font-weight: 600; min-width: 22px; color: var(--text-hint); }
-  .rank-num.r1 { color: #BA7517; }
-  .rank-num.r2 { color: var(--gray); }
-  .rank-num.r3 { color: #854F0B; }
-  .avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
-  .runner-meta { flex: 1; min-width: 0; }
-  .runner-name { font-size: 14px; font-weight: 500; }
-  .runner-sub { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
-  .bar-wrap { height: 3px; background: var(--gray-light); border-radius: 2px; margin-top: 5px; overflow: hidden; }
-  .bar { height: 3px; border-radius: 2px; }
-  .score-col { text-align: right; }
-  .score-big { font-size: 22px; font-weight: 600; }
-  .score-tiny { font-size: 11px; color: var(--text-muted); }
-
-  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
-  .chip { padding: 6px 12px; border-radius: 20px; font-size: 13px; border: 0.5px solid var(--border); background: transparent; cursor: pointer; color: var(--text-muted); }
-  .chip.active { background: var(--teal-light); color: var(--teal-dark); border-color: var(--teal); font-weight: 500; }
-
-  .workout-card { background: var(--bg); border-radius: var(--radius); border: 0.5px solid var(--border); padding: 12px 14px; margin-bottom: 8px; }
-  .wc-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-  .wc-title { font-size: 14px; font-weight: 500; }
-  .wc-type { font-size: 12px; color: var(--text-muted); }
-  .wc-row { display: flex; justify-content: space-between; font-size: 13px; margin-top: 3px; color: var(--text-muted); }
-  .wc-row span { color: var(--text); font-weight: 500; }
-  .tag { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; margin-top: 8px; }
-  .tag-done { background: var(--teal-light); color: var(--teal-dark); }
-  .tag-miss { background: var(--red-light); color: var(--red-dark); }
-  .tag-partial { background: var(--amber-light); color: var(--amber-dark); }
-  .tag-planned { background: var(--gray-light); color: var(--gray-dark); }
-
-  .form-group { margin-bottom: 14px; }
-  .form-label { font-size: 12px; font-weight: 500; color: var(--text-muted); margin-bottom: 5px; display: block; }
-  .form-row { display: flex; gap: 8px; }
-  input, select, textarea { width: 100%; padding: 10px 12px; border: 0.5px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; background: var(--bg-secondary); color: var(--text); font-family: inherit; }
-  textarea { resize: none; }
-  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--teal); }
-
-  .btn { width: 100%; padding: 13px; border-radius: var(--radius); font-size: 15px; font-weight: 500; cursor: pointer; border: none; }
-  .btn-primary { background: var(--teal); color: white; }
-  .btn-primary:active { opacity: 0.85; }
-  .btn-ghost { background: transparent; border: 0.5px dashed var(--border); color: var(--text-muted); }
-
-  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-  .stat-card { background: var(--bg-secondary); border-radius: var(--radius-sm); padding: 12px; }
-  .stat-val { font-size: 22px; font-weight: 600; }
-  .stat-lbl { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-
-  .verdict { padding: 14px; border-radius: var(--radius); margin-top: 12px; }
-  .verdict-good { background: var(--teal-light); }
-  .verdict-bad { background: var(--red-light); }
-  .verdict-title { font-size: 15px; font-weight: 600; }
-  .verdict-good .verdict-title { color: var(--teal-dark); }
-  .verdict-bad .verdict-title { color: var(--red-dark); }
-  .verdict-body { font-size: 13px; margin-top: 4px; }
-  .verdict-good .verdict-body { color: var(--teal); }
-  .verdict-bad .verdict-body { color: var(--red-dark); }
-
-  .range-row { display: flex; gap: 10px; align-items: center; }
-  .range-row input[type=range] { flex: 1; accent-color: var(--teal); }
-  .range-val { font-size: 14px; font-weight: 500; min-width: 40px; }
-
-  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: flex-end; }
-  .modal-overlay.open { display: flex; }
-  .modal { background: var(--bg); border-radius: 20px 20px 0 0; padding: 20px 16px 40px; width: 100%; max-height: 90vh; overflow-y: auto; }
-  .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
-  .modal-title { font-size: 17px; font-weight: 600; margin-bottom: 16px; }
-
-  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a1a1a; color: white; padding: 10px 20px; border-radius: 20px; font-size: 13px; z-index: 300; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
-  .toast.show { opacity: 1; }
-
-  .empty { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 14px; }
-  .loading { text-align: center; padding: 30px; color: var(--text-muted); font-size: 14px; }
-
-  .add-runner-row { display: flex; gap: 8px; margin-top: 8px; }
-  .add-runner-row input { flex: 1; }
-  .add-runner-row button { padding: 10px 16px; background: var(--teal); color: white; border: none; border-radius: var(--radius-sm); font-size: 14px; cursor: pointer; white-space: nowrap; }
+:root{
+  --teal:#1D9E75;--teal-light:#E1F5EE;--teal-dark:#085041;
+  --blue:#378ADD;--blue-light:#E6F1FB;--blue-dark:#185FA5;
+  --coral:#D85A30;--coral-light:#FAECE7;--coral-dark:#993C1D;
+  --purple:#7F77DD;--purple-light:#EEEDFE;--purple-dark:#534AB7;
+  --pink:#D4537E;--pink-light:#FBEAF0;--pink-dark:#993556;
+  --amber:#BA7517;--amber-light:#FAEEDA;--amber-dark:#854F0B;
+  --red:#E24B4A;--red-light:#FCEBEB;--red-dark:#A32D2D;
+  --gray:#888780;--gray-light:#F1EFE8;--gray-dark:#444441;
+  --text:#1a1a1a;--text-muted:#666;--text-hint:#999;
+  --bg:#fff;--bg2:#f7f7f5;--border:rgba(0,0,0,0.1);
+  --r:12px;--rs:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg2);color:var(--text);max-width:430px;margin:0 auto;min-height:100vh;}
+.hdr{background:var(--bg);padding:14px 16px;border-bottom:0.5px solid var(--border);position:sticky;top:0;z-index:100;}
+.hdr h1{font-size:17px;font-weight:600;}
+.hdr .sub{font-size:12px;color:var(--text-muted);margin-top:1px;}
+.cpill{display:inline-block;background:var(--teal-light);color:var(--teal-dark);font-size:12px;font-weight:500;padding:3px 10px;border-radius:20px;margin-top:5px;}
+.nav{display:flex;background:var(--bg);border-bottom:0.5px solid var(--border);}
+.nav button{flex:1;padding:12px 4px;font-size:12px;border:none;background:transparent;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;font-weight:500;}
+.nav button.active{color:var(--teal);border-bottom-color:var(--teal);}
+.page{display:none;padding:16px;}
+.page.active{display:block;}
+.slbl{font-size:11px;font-weight:600;color:var(--text-hint);text-transform:uppercase;letter-spacing:0.06em;margin:16px 0 8px;}
+.card{background:var(--bg);border-radius:var(--r);border:0.5px solid var(--border);padding:14px;margin-bottom:10px;}
+/* runner rows */
+.rrow{background:var(--bg);border-radius:var(--r);border:0.5px solid var(--border);margin-bottom:8px;overflow:hidden;}
+.rrow-top{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;}
+.rnk{font-size:16px;font-weight:600;min-width:18px;color:var(--text-hint);padding-top:10px;}
+.rnk.r1{color:#BA7517;}.rnk.r2{color:var(--gray);}.rnk.r3{color:#854F0B;}
+.rmeta{flex:1;min-width:0;}
+.rname{font-size:14px;font-weight:500;}
+.rsub{font-size:12px;color:var(--text-muted);margin-top:1px;}
+.barw{height:3px;background:var(--gray-light);border-radius:2px;margin-top:5px;overflow:hidden;}
+.bar{height:3px;border-radius:2px;}
+.scol{text-align:right;padding-top:2px;}
+.sbig{font-size:22px;font-weight:600;}
+.stiny{font-size:11px;color:var(--text-muted);}
+.gpill{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;margin-top:5px;}
+.gon{background:var(--teal-light);color:var(--teal-dark);}
+.goff{background:var(--red-light);color:var(--red-dark);}
+.gnone{background:var(--gray-light);color:var(--gray-dark);}
+/* chips */
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.chip{padding:6px 12px;border-radius:20px;font-size:13px;border:0.5px solid var(--border);background:transparent;cursor:pointer;color:var(--text-muted);}
+.chip.active{background:var(--teal-light);color:var(--teal-dark);border-color:var(--teal);font-weight:500;}
+/* workout cards */
+.wcard{background:var(--bg);border-radius:var(--r);border:0.5px solid var(--border);margin-bottom:8px;overflow:hidden;}
+.wc-inner{padding:12px 14px;}
+.wch{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+.wct{font-size:14px;font-weight:500;}
+.wcty{font-size:12px;color:var(--text-muted);}
+.wcr{display:flex;justify-content:space-between;font-size:13px;margin-top:3px;color:var(--text-muted);}
+.wcr span{color:var(--text);font-weight:500;}
+.tag{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;margin-top:8px;}
+.tdone{background:var(--teal-light);color:var(--teal-dark);}
+.tmiss{background:var(--red-light);color:var(--red-dark);}
+.tpart{background:var(--amber-light);color:var(--amber-dark);}
+.tplan{background:var(--gray-light);color:var(--gray-dark);}
+/* forms */
+.fg{margin-bottom:14px;}
+.fl{font-size:12px;font-weight:500;color:var(--text-muted);margin-bottom:5px;display:block;}
+.fr{display:flex;gap:8px;}
+input,select,textarea{width:100%;padding:10px 12px;border:0.5px solid var(--border);border-radius:var(--rs);font-size:14px;background:var(--bg2);color:var(--text);font-family:inherit;}
+textarea{resize:none;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
+.btn{width:100%;padding:13px;border-radius:var(--r);font-size:15px;font-weight:500;cursor:pointer;border:none;}
+.btnp{background:var(--teal);color:white;}.btnp:active{opacity:0.85;}
+.btng{background:transparent;border:0.5px dashed var(--border);color:var(--text-muted);}
+/* verdicts */
+.verd{padding:14px;border-radius:var(--r);margin-top:12px;}
+.vgood{background:var(--teal-light);}.vbad{background:var(--red-light);}
+.vtitle{font-size:15px;font-weight:600;}
+.vgood .vtitle{color:var(--teal-dark);}.vbad .vtitle{color:var(--red-dark);}
+.vbody{font-size:13px;margin-top:4px;}
+.vgood .vbody{color:var(--teal);}.vbad .vbody{color:var(--red-dark);}
+.rr{display:flex;gap:10px;align-items:center;}
+.rr input[type=range]{flex:1;accent-color:var(--teal);}
+/* modal */
+.movl{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:flex-end;}
+.movl.open{display:flex;}
+.modal{background:var(--bg);border-radius:20px 20px 0 0;padding:20px 16px 40px;width:100%;max-height:90vh;overflow-y:auto;}
+.mhdl{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px;}
+.mtitle{font-size:17px;font-weight:600;margin-bottom:16px;}
+/* toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:white;padding:10px 20px;border-radius:20px;font-size:13px;z-index:300;opacity:0;transition:opacity 0.2s;pointer-events:none;}
+.toast.show{opacity:1;}
+.empty{text-align:center;padding:40px 20px;color:var(--text-muted);font-size:14px;}
+.loading{text-align:center;padding:30px;color:var(--text-muted);font-size:14px;}
+.arr{display:flex;gap:8px;margin-top:8px;}
+.arr input{flex:1;}
+.arr button{padding:10px 16px;background:var(--teal);color:white;border:none;border-radius:var(--rs);font-size:14px;cursor:pointer;white-space:nowrap;}
+/* comments */
+.csec{padding:0 14px 12px;border-top:0.5px solid var(--border);}
+.citem{display:flex;gap:8px;margin-top:8px;align-items:flex-start;}
+.cbubble{background:var(--bg2);border-radius:0 10px 10px 10px;padding:7px 10px;flex:1;}
+.cauthor{font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:2px;}
+.cmsg{font-size:13px;color:var(--text);}
+.cinrow{display:flex;gap:6px;margin-top:8px;align-items:center;}
+.cinrow select{width:auto;min-width:90px;padding:7px 8px;font-size:12px;flex-shrink:0;}
+.cinrow input{flex:1;padding:7px 10px;font-size:13px;}
+.cinrow button{padding:7px 12px;background:var(--teal);color:white;border:none;border-radius:var(--rs);font-size:13px;cursor:pointer;flex-shrink:0;}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+<div class="hdr">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;">
     <div>
       <h1>Berlin Marathon 2026</h1>
       <div class="sub">Track your crew's progress</div>
     </div>
-    <div class="countdown-pill" id="countdown">... days</div>
+    <div class="cpill" id="countdown">... days</div>
   </div>
 </div>
 
@@ -138,447 +132,522 @@
 </div>
 
 <div id="board" class="page active">
-  <div class="section-label">Adherence leaderboard</div>
+  <div class="slbl">Adherence leaderboard</div>
   <div id="leaderboard"><div class="loading">Loading...</div></div>
-  <div class="section-label">Runners</div>
-  <div class="add-runner-row">
-    <input id="new-runner-name" placeholder="Add new runner..." maxlength="30">
+  <div class="slbl">Add runner</div>
+  <div class="arr">
+    <input id="new-runner-name" placeholder="Name..." maxlength="30">
     <button onclick="addRunner()">Add</button>
   </div>
 </div>
 
 <div id="training" class="page">
-  <div class="section-label">Viewing schedule for</div>
+  <div class="slbl">Viewing schedule for</div>
   <div class="chips" id="training-chips"></div>
   <div id="training-content"><div class="loading">Select a runner above</div></div>
-  <button class="btn btn-ghost" style="margin-top:8px" onclick="openAddWorkout()">+ Add planned workout</button>
+  <button class="btn btng" style="margin-top:8px" onclick="openAddWorkout()">+ Add planned workout</button>
+  <div style="margin-top:10px">
+    <input type="file" id="xlsx-upload" accept=".xlsx,.xls" style="display:none" onchange="handleXlsxUpload(event)">
+    <button class="btn btng" style="border-color:#1D9E75;color:#1D9E75" onclick="document.getElementById('xlsx-upload').click()">↑ Upload training plan (.xlsx)</button>
+  </div>
+  <div id="upload-status" style="margin-top:8px;font-size:13px;color:var(--text-muted);display:none"></div>
 </div>
 
 <div id="log" class="page">
-  <div class="section-label">Log a completed workout</div>
+  <div class="slbl">Log a completed workout</div>
   <div class="card">
-    <div class="form-group">
-      <label class="form-label">Runner</label>
-      <select id="log-runner"></select>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Date</label>
-      <input type="date" id="log-date">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Workout type</label>
+    <div class="fg"><label class="fl">Runner</label><select id="log-runner"></select></div>
+    <div class="fg"><label class="fl">Date</label><input type="date" id="log-date"></div>
+    <div class="fg"><label class="fl">Workout type</label>
       <select id="log-type">
-        <option>Easy run</option>
-        <option>Tempo run</option>
-        <option>Long run</option>
-        <option>Intervals</option>
-        <option>Recovery run</option>
-        <option>Race</option>
-        <option>Cross training</option>
-        <option>Other</option>
+        <option>Easy run</option><option>Tempo run</option><option>Long run</option>
+        <option>Intervals</option><option>Recovery run</option><option>Race</option>
+        <option>Cross training</option><option>Other</option>
       </select>
     </div>
-    <div class="form-group">
-      <label class="form-label">Distance (km) & time (min)</label>
-      <div class="form-row">
+    <div class="fg"><label class="fl">Distance (km) &amp; time (min)</label>
+      <div class="fr">
         <input type="number" id="log-km" placeholder="12.5" step="0.1" min="0">
         <input type="number" id="log-min" placeholder="65" min="0">
       </div>
     </div>
-    <div class="form-group">
-      <label class="form-label">Location</label>
-      <input type="text" id="log-location" placeholder="e.g. Tiergarten, Berlin">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Notes</label>
-      <textarea id="log-notes" rows="2" placeholder="How did it feel?"></textarea>
-    </div>
-    <button class="btn btn-primary" onclick="saveWorkout()">Save workout</button>
+    <div class="fg"><label class="fl">Location</label><input type="text" id="log-location" placeholder="e.g. Tiergarten, Berlin"></div>
+    <div class="fg"><label class="fl">Notes</label><textarea id="log-notes" rows="2" placeholder="How did it feel?"></textarea></div>
+    <button class="btn btnp" onclick="saveWorkout()">Save workout</button>
   </div>
-  <div class="section-label">Recent logs</div>
+  <div class="slbl">Recent logs</div>
   <div id="recent-logs"><div class="loading">Loading...</div></div>
 </div>
 
 <div id="goal" class="page">
-  <div class="section-label">Goal calculator</div>
+  <div class="slbl">Goal calculator</div>
   <div class="card">
-    <div class="form-group">
-      <label class="form-label">Runner</label>
-      <select id="goal-runner" onchange="loadGoal()"></select>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Target finish time</label>
-      <div class="form-row">
+    <div class="fg"><label class="fl">Runner</label><select id="goal-runner" onchange="loadGoal()"></select></div>
+    <div class="fg"><label class="fl">Target finish time</label>
+      <div class="fr">
         <input type="number" id="goal-h" placeholder="3" min="2" max="7" style="max-width:80px" oninput="calcGoal()">
-        <span style="line-height:42px; color:var(--text-muted); font-size:13px">h</span>
+        <span style="line-height:42px;color:var(--text-muted);font-size:13px">h</span>
         <input type="number" id="goal-m" placeholder="45" min="0" max="59" style="max-width:80px" oninput="calcGoal()">
-        <span style="line-height:42px; color:var(--text-muted); font-size:13px">min</span>
+        <span style="line-height:42px;color:var(--text-muted);font-size:13px">min</span>
       </div>
     </div>
-    <div class="form-group">
-      <label class="form-label">Current weekly km: <span id="km-out" style="font-weight:600; color:var(--text)">50</span></label>
-      <div class="range-row">
-        <input type="range" min="10" max="120" value="50" id="weekly-km" step="1" oninput="document.getElementById('km-out').textContent=this.value; calcGoal()">
-        <span class="range-val" style="color:var(--text-muted); font-size:12px">km/w</span>
-      </div>
+    <div class="fg"><label class="fl">Current weekly km: <span id="km-out" style="font-weight:600;color:var(--text)">50</span></label>
+      <div class="rr"><input type="range" min="10" max="120" value="50" id="weekly-km" step="1" oninput="document.getElementById('km-out').textContent=this.value;calcGoal()"><span style="color:var(--text-muted);font-size:12px">km/w</span></div>
     </div>
-    <div class="form-group">
-      <label class="form-label">Longest recent run: <span id="lr-out" style="font-weight:600; color:var(--text)">18</span> km</label>
-      <div class="range-row">
-        <input type="range" min="5" max="38" value="18" id="long-run" step="1" oninput="document.getElementById('lr-out').textContent=this.value; calcGoal()">
-      </div>
+    <div class="fg"><label class="fl">Longest recent run: <span id="lr-out" style="font-weight:600;color:var(--text)">18</span> km</label>
+      <div class="rr"><input type="range" min="5" max="38" value="18" id="long-run" step="1" oninput="document.getElementById('lr-out').textContent=this.value;calcGoal()"></div>
     </div>
-    <button class="btn btn-primary" style="margin-top:4px" onclick="saveGoal()">Save my goal</button>
+    <button class="btn btnp" style="margin-top:4px" onclick="saveGoal()">Save my goal</button>
     <div id="verdict-box"></div>
   </div>
 </div>
 
 <!-- Add Workout Modal -->
-<div class="modal-overlay" id="add-workout-modal" onclick="closeModal(event)">
+<div class="movl" id="add-workout-modal" onclick="closeModal(event)">
   <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Add planned workout</div>
-    <div class="form-group">
-      <label class="form-label">Runner</label>
-      <select id="plan-runner"></select>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Date</label>
-      <input type="date" id="plan-date">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Workout type</label>
+    <div class="mhdl"></div>
+    <div class="mtitle">Add planned workout</div>
+    <div class="fg"><label class="fl">Runner</label><select id="plan-runner"></select></div>
+    <div class="fg"><label class="fl">Date</label><input type="date" id="plan-date"></div>
+    <div class="fg"><label class="fl">Workout type</label>
       <select id="plan-type">
         <option>Easy run</option><option>Tempo run</option><option>Long run</option>
         <option>Intervals</option><option>Recovery run</option><option>Race</option><option>Other</option>
       </select>
     </div>
-    <div class="form-group">
-      <label class="form-label">Planned distance (km)</label>
-      <input type="number" id="plan-km" placeholder="15" step="0.5" min="0">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Target pace (min/km)</label>
-      <input type="text" id="plan-pace" placeholder="5:30">
-    </div>
-    <button class="btn btn-primary" onclick="savePlan()">Add to schedule</button>
+    <div class="fg"><label class="fl">Planned distance (km)</label><input type="number" id="plan-km" placeholder="15" step="0.5" min="0"></div>
+    <div class="fg"><label class="fl">Target pace (min/km)</label><input type="text" id="plan-pace" placeholder="5:30"></div>
+    <button class="btn btnp" onclick="savePlan()">Add to schedule</button>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-const SUPABASE_URL = 'https://zcamktlipterhpuiupsj.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjYW1rdGxpcHRlcmhwdWl1cHNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1OTgwNzUsImV4cCI6MjA5MjE3NDA3NX0.gHvM1bbVRmT9ufJO82_yXiNquU4xpEyRd9Mcy94nCRw';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SB_URL='https://zcamktlipterhpuiupsj.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjYW1rdGxpcHRlcmhwdWl1cHNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1OTgwNzUsImV4cCI6MjA5MjE3NDA3NX0.gHvM1bbVRmT9ufJO82_yXiNquU4xpEyRd9Mcy94nCRw';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+let users=[],selectedUser=null;
+const MDATE=new Date('2026-09-27');
 
-const COLORS = [
-  {bg:'#E1F5EE',text:'#085041'},
-  {bg:'#E6F1FB',text:'#185FA5'},
-  {bg:'#FAECE7',text:'#993C1D'},
-  {bg:'#EEEDFE',text:'#534AB7'},
-  {bg:'#FBEAF0',text:'#993556'},
-  {bg:'#FAEEDA',text:'#854F0B'},
-];
-const SCORE_COLORS = ['#1D9E75','#1D9E75','#1D9E75','#BA7517','#BA7517','#E24B4A'];
+// ── CARICATURES ──────────────────────────────────────────────────────────
+function caricature(name,sz=42){
+  const n=(name||'').toLowerCase();
+  const skin='#FDDBB4';
 
-let users = [];
-let selectedTrainingUser = null;
+  function base(hair,eyes,extras=''){
+    const eyeL=eyes||`<ellipse cx="17" cy="20.5" rx="1.5" ry="1.8" fill="#1a1a1a"/><ellipse cx="25" cy="20.5" rx="1.5" ry="1.8" fill="#1a1a1a"/><ellipse cx="17.4" cy="20" rx="0.6" ry="0.6" fill="white"/><ellipse cx="25.4" cy="20" rx="0.6" ry="0.6" fill="white"/>`;
+    return `<svg width="${sz}" height="${sz}" viewBox="0 0 42 42" xmlns="http://www.w3.org/2000/svg">
+<circle cx="21" cy="21" r="21" fill="#e8e8e8"/>
+<ellipse cx="21" cy="27" rx="11" ry="9" fill="${skin}"/>
+<ellipse cx="21" cy="19" rx="10" ry="11" fill="${skin}"/>
+${hair}${eyeL}
+<ellipse cx="21" cy="24" rx="1.1" ry="0.7" fill="#c8a090"/>
+${extras}
+</svg>`;
+  }
 
-function colorFor(i) { return COLORS[i % COLORS.length]; }
+  // SERRANITO — white skin, black medium-length hair
+  if(n.includes('serranito')){
+    return base(
+      `<ellipse cx="21" cy="11" rx="10" ry="7" fill="#1a1a1a"/>
+       <rect x="11" y="11" width="20" height="6" fill="#1a1a1a"/>
+       <ellipse cx="15" cy="17" rx="2" ry="4" fill="#1a1a1a"/>
+       <ellipse cx="27" cy="17" rx="2" ry="4" fill="#1a1a1a"/>`,''
+    );
+  }
 
-// Countdown
-const marathon = new Date('2026-09-27');
-const days = Math.ceil((marathon - new Date()) / 86400000);
-document.getElementById('countdown').textContent = days + ' days';
+  // BUTA — buzz cut, nose strip, blue eyes, very serious (flat mouth)
+  if(n.includes('buta')){
+    const blueEyes=`<ellipse cx="17" cy="20.5" rx="1.5" ry="1.8" fill="#4A90D9"/><ellipse cx="25" cy="20.5" rx="1.5" ry="1.8" fill="#4A90D9"/><ellipse cx="17.4" cy="20" rx="0.6" ry="0.6" fill="white"/><ellipse cx="25.4" cy="20" rx="0.6" ry="0.6" fill="white"/>`;
+    return base(
+      `<ellipse cx="21" cy="11" rx="10" ry="4" fill="#333"/>
+       <rect x="11" y="11" width="20" height="2.5" fill="#333"/>`,
+      blueEyes,
+      `<rect x="18.5" y="22" width="5" height="1.5" rx="0.7" fill="#d4a0a0"/>
+       <line x1="17" y1="26" x2="25" y2="26" stroke="#b09080" stroke-width="1.2" stroke-linecap="round"/>
+       <line x1="14" y1="19.5" x2="28" y2="19.5" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round"/>`
+    );
+  }
 
-// Navigation
-function showPage(id, btn) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  btn.classList.add('active');
-  if (id === 'board') loadLeaderboard();
-  if (id === 'log') { loadRecentLogs(); setToday('log-date'); }
-  if (id === 'goal') populateSelect('goal-runner');
+  // PINK — young Justin Bieber: side-swept blond hair, white skin
+  if(n.includes('pink')){
+    return base(
+      `<ellipse cx="21" cy="11" rx="10.5" ry="7" fill="#D4AA30"/>
+       <path d="M10 15 Q12 8 21 9 Q30 8 32 14" fill="#D4AA30" stroke="none"/>
+       <path d="M10 15 Q9 17 10 21" stroke="#C8A020" stroke-width="4" fill="none" stroke-linecap="round"/>
+       <path d="M10.5 13 Q13 9 21 9.5" stroke="#E0B830" stroke-width="2.5" fill="none" stroke-linecap="round"/>`,''
+    );
+  }
+
+  // RICHI TRENITALIA — short dark hair, sport sunglasses
+  if(n.includes('richi')){
+    const shades=`<rect x="12" y="18" width="18" height="5.5" rx="2.5" fill="#111" opacity="0.9"/>
+      <rect x="12.5" y="18.5" width="7.5" height="4.5" rx="2" fill="#1a6090" opacity="0.75"/>
+      <rect x="22" y="18.5" width="7.5" height="4.5" rx="2" fill="#1a6090" opacity="0.75"/>
+      <rect x="20" y="19.5" width="2" height="2.5" rx="0.5" fill="#111"/>
+      <line x1="12" y1="20.5" x2="9.5" y2="21" stroke="#111" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="30" y1="20.5" x2="32.5" y2="21" stroke="#111" stroke-width="1.2" stroke-linecap="round"/>`;
+    return base(
+      `<ellipse cx="21" cy="12" rx="10" ry="5.5" fill="#3a2510"/>
+       <rect x="11" y="12" width="20" height="3" fill="#3a2510"/>`,
+      shades
+    );
+  }
+
+  // MAMBRO — hair band, sport sunglasses, big smile, brown hair
+  if(n.includes('mambro')){
+    const shadesG=`<rect x="12" y="18" width="18" height="5.5" rx="2.5" fill="#111" opacity="0.9"/>
+      <rect x="12.5" y="18.5" width="7.5" height="4.5" rx="2" fill="#20a060" opacity="0.7"/>
+      <rect x="22" y="18.5" width="7.5" height="4.5" rx="2" fill="#20a060" opacity="0.7"/>
+      <rect x="20" y="19.5" width="2" height="2.5" rx="0.5" fill="#111"/>
+      <line x1="12" y1="20.5" x2="9.5" y2="21" stroke="#111" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="30" y1="20.5" x2="32.5" y2="21" stroke="#111" stroke-width="1.2" stroke-linecap="round"/>`;
+    return base(
+      `<ellipse cx="21" cy="11.5" rx="10" ry="7" fill="#7B3F10"/>
+       <path d="M11 14 Q21 8 31 14" stroke="#D03030" stroke-width="3.5" fill="none" stroke-linecap="round"/>`,
+      shadesG,
+      `<path d="M15.5 26.5 Q21 31.5 26.5 26.5" stroke="#c8a090" stroke-width="2" fill="none" stroke-linecap="round"/>
+       <ellipse cx="16" cy="27" rx="1.2" ry="0.9" fill="#c8a090"/>
+       <ellipse cx="26" cy="27" rx="1.2" ry="0.9" fill="#c8a090"/>`
+    );
+  }
+
+  // LINUS — buzz cut (lighter than buta), nose strip, blue eyes, neutral expression
+  if(n.includes('linus')){
+    const blueEyes2=`<ellipse cx="17" cy="20.5" rx="1.5" ry="1.8" fill="#5090D0"/><ellipse cx="25" cy="20.5" rx="1.5" ry="1.8" fill="#5090D0"/><ellipse cx="17.4" cy="20" rx="0.6" ry="0.6" fill="white"/><ellipse cx="25.4" cy="20" rx="0.6" ry="0.6" fill="white"/>`;
+    return base(
+      `<ellipse cx="21" cy="11" rx="10" ry="4" fill="#555"/>
+       <rect x="11" y="11" width="20" height="2.5" fill="#555"/>`,
+      blueEyes2,
+      `<rect x="18.5" y="22" width="5" height="1.5" rx="0.7" fill="#d4a0a0"/>
+       <path d="M17.5 26.5 Q21 28.5 24.5 26.5" stroke="#b09080" stroke-width="1.4" fill="none" stroke-linecap="round"/>`
+    );
+  }
+
+  // fallback initials
+  const ini=(name||'??').slice(0,2).toUpperCase();
+  return `<svg width="${sz}" height="${sz}" viewBox="0 0 42 42" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="21" cy="21" r="21" fill="#E1F5EE"/>
+    <text x="21" y="26" text-anchor="middle" font-size="14" font-weight="600" fill="#085041">${ini}</text>
+  </svg>`;
 }
 
-function setToday(id) {
-  const d = new Date();
-  document.getElementById(id).value = d.toISOString().split('T')[0];
+// ── GOAL PREDICTION ──────────────────────────────────────────────────────
+function goalPred(user,workouts){
+  if(!user.goal_hours) return `<span class="gpill gnone">No goal set</span>`;
+  const totalMin=user.goal_hours*60+(user.goal_minutes||0);
+  const done=workouts.filter(w=>w.user_id===user.id&&w.status==='done'&&w.actual_km>0);
+  const goalStr=`${user.goal_hours}h${String(user.goal_minutes||0).padStart(2,'0')}`;
+  if(done.length===0) return `<span class="gpill gnone">Goal: ${goalStr} — log runs first</span>`;
+  const last6=done.slice(-6);
+  const avgKm=last6.reduce((s,w)=>s+(w.actual_km||0),0)/last6.length;
+  const weeklyEst=avgKm*3;
+  const longRun=Math.max(...done.map(w=>w.actual_km||0));
+  const reqWeekly=totalMin<210?70:totalMin<240?55:totalMin<270?45:35;
+  const reqLong=totalMin<210?32:totalMin<240?28:totalMin<270?25:22;
+  const onTrack=weeklyEst>=reqWeekly*0.85&&longRun>=reqLong*0.85;
+  return onTrack
+    ? `<span class="gpill gon">On track for ${goalStr}</span>`
+    : `<span class="gpill goff">Goal ${goalStr} at risk</span>`;
 }
 
-// Toast
-function toast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
+// ── UTILS ────────────────────────────────────────────────────────────────
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+function setToday(id){document.getElementById(id).value=new Date().toISOString().split('T')[0];}
+document.getElementById('countdown').textContent=Math.ceil((MDATE-new Date())/86400000)+' days';
+
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');btn.classList.add('active');
+  if(id==='board')loadLeaderboard();
+  if(id==='log'){loadRecentLogs();setToday('log-date');}
+  if(id==='goal')popSelect('goal-runner');
 }
 
-// Load users
-async function loadUsers() {
-  const { data } = await sb.from('users').select('*').order('created_at');
-  users = data || [];
-  populateAllSelects();
-  loadLeaderboard();
-  loadTrainingChips();
+// ── USERS ────────────────────────────────────────────────────────────────
+async function loadUsers(){
+  const{data}=await sb.from('users').select('*').order('created_at');
+  users=data||[];
+  ['log-runner','plan-runner'].forEach(id=>popSelect(id));
+  loadLeaderboard();loadTrainingChips();
+}
+function popSelect(id){
+  const el=document.getElementById(id);if(!el)return;
+  el.innerHTML=users.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
+}
+async function addRunner(){
+  const name=document.getElementById('new-runner-name').value.trim();
+  if(!name)return;
+  const{error}=await sb.from('users').insert({name,avatar:name.slice(0,2).toUpperCase()});
+  if(error){toast('Error');return;}
+  document.getElementById('new-runner-name').value='';
+  toast(name+' added!');await loadUsers();
 }
 
-function populateAllSelects() {
-  ['log-runner','plan-runner'].forEach(id => populateSelect(id));
-}
+// ── LEADERBOARD ──────────────────────────────────────────────────────────
+async function loadLeaderboard(){
+  const[{data:wk},{data:cm}]=await Promise.all([
+    sb.from('workouts').select('*'),
+    sb.from('comments').select('*').is('workout_id',null)
+  ]);
+  const workouts=wk||[],comments=cm||[];
 
-function populateSelect(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.innerHTML = users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
-}
-
-// Leaderboard
-async function loadLeaderboard() {
-  const { data: workouts } = await sb.from('workouts').select('*');
-  if (!workouts) return;
-
-  const scores = users.map((u, i) => {
-    const uw = workouts.filter(w => w.user_id === u.id);
-    const done = uw.filter(w => w.status === 'done');
-    const total = uw.filter(w => w.status !== 'planned' || new Date(w.date) < new Date());
-    const completed = uw.filter(w => w.status === 'done' || w.status === 'partial');
-    const planned = uw.filter(w => w.status === 'planned');
-    
-    let score = 0;
-    if (done.length > 0) {
-      const avgComp = done.reduce((s, w) => s + (w.compliance_score || 100), 0) / done.length;
-      const adherence = total.length > 0 ? (completed.length / total.length) * 100 : 0;
-      score = Math.round((avgComp * 0.6) + (adherence * 0.4));
+  const scores=users.map(u=>{
+    const uw=workouts.filter(w=>w.user_id===u.id);
+    const done=uw.filter(w=>w.status==='done');
+    const past=uw.filter(w=>w.status!=='planned'||new Date(w.date)<new Date());
+    const comp=uw.filter(w=>w.status==='done'||w.status==='partial');
+    let score=0;
+    if(done.length>0){
+      const avg=done.reduce((s,w)=>s+(w.compliance_score||100),0)/done.length;
+      const adh=past.length>0?(comp.length/past.length)*100:0;
+      score=Math.round(avg*0.6+adh*0.4);
     }
-    
-    const totalPlanned = uw.length;
-    const doneCount = completed.length;
-    return { user: u, score, doneCount, totalPlanned, colorIdx: i };
-  });
+    return{u,score,done:comp.length,total:uw.length,pred:goalPred(u,workouts),comments:comments.filter(c=>c.target_user_id===u.id)};
+  }).sort((a,b)=>b.score-a.score);
 
-  scores.sort((a, b) => b.score - a.score);
-
-  const rankClasses = ['r1','r2','r3'];
-  document.getElementById('leaderboard').innerHTML = scores.map((s, i) => {
-    const c = colorFor(s.colorIdx);
-    const barColor = s.score >= 80 ? '#1D9E75' : s.score >= 60 ? '#BA7517' : '#E24B4A';
-    return `<div class="runner-row">
-      <div class="rank-num ${rankClasses[i] || ''}">${i+1}</div>
-      <div class="avatar" style="background:${c.bg};color:${c.text}">${s.user.avatar || s.user.name.slice(0,2).toUpperCase()}</div>
-      <div class="runner-meta">
-        <div class="runner-name">${s.user.name}</div>
-        <div class="runner-sub">${s.doneCount} of ${s.totalPlanned} sessions done</div>
-        <div class="bar-wrap"><div class="bar" style="width:${s.score}%;background:${barColor}"></div></div>
+  const rc=['r1','r2','r3'];
+  document.getElementById('leaderboard').innerHTML=scores.map((s,i)=>{
+    const bc=s.score>=80?'#1D9E75':s.score>=60?'#BA7517':'#E24B4A';
+    const uOpts=users.map(u=>`<option value="${esc(u.name)}">${esc(u.name)}</option>`).join('');
+    const commHtml=s.comments.map(c=>`
+      <div class="citem">
+        <div style="width:26px;height:26px;flex-shrink:0">${caricature(c.author_name,26)}</div>
+        <div class="cbubble"><div class="cauthor">${esc(c.author_name)}</div><div class="cmsg">${esc(c.message)}</div></div>
+      </div>`).join('');
+    const uid=s.u.id;
+    return `<div class="rrow">
+      <div class="rrow-top">
+        <div class="rnk ${rc[i]||''}">${i+1}</div>
+        <div style="width:42px;height:42px;flex-shrink:0">${caricature(s.u.name)}</div>
+        <div class="rmeta">
+          <div class="rname">${esc(s.u.name)}</div>
+          <div class="rsub">${s.done} of ${s.total} sessions done</div>
+          <div class="barw"><div class="bar" style="width:${s.score}%;background:${bc}"></div></div>
+          ${s.pred}
+        </div>
+        <div class="scol"><div class="sbig">${s.score}</div><div class="stiny">score</div></div>
       </div>
-      <div class="score-col">
-        <div class="score-big">${s.score}</div>
-        <div class="score-tiny">score</div>
+      <div class="csec">
+        ${commHtml}
+        <div class="cinrow">
+          <select id="csu-${uid}">${uOpts}</select>
+          <input id="cu-${uid}" type="text" placeholder="Motivate ${esc(s.u.name)}..." maxlength="140" onkeydown="if(event.key==='Enter')postComment('cu-${uid}','csu-${uid}','${uid}',null)">
+          <button onclick="postComment('cu-${uid}','csu-${uid}','${uid}',null)">Send</button>
+        </div>
       </div>
     </div>`;
-  }).join('') || '<div class="empty">No data yet — log some workouts!</div>';
+  }).join('')||'<div class="empty">No data yet</div>';
 }
 
-// Add runner
-async function addRunner() {
-  const name = document.getElementById('new-runner-name').value.trim();
-  if (!name) return;
-  const avatar = name.slice(0,2).toUpperCase();
-  const { error } = await sb.from('users').insert({ name, avatar });
-  if (error) { toast('Error adding runner'); return; }
-  document.getElementById('new-runner-name').value = '';
-  toast(name + ' added!');
-  await loadUsers();
+// ── COMMENTS ─────────────────────────────────────────────────────────────
+async function postComment(inId,selId,targetUid,workoutId){
+  const msg=document.getElementById(inId)?.value.trim();
+  const author=document.getElementById(selId)?.value;
+  if(!msg||!author)return;
+  const payload={author_name:author,message:msg};
+  if(targetUid&&targetUid!=='null')payload.target_user_id=targetUid;
+  if(workoutId&&workoutId!=='null')payload.workout_id=workoutId;
+  const{error}=await sb.from('comments').insert(payload);
+  if(error){toast('Error posting');return;}
+  document.getElementById(inId).value='';
+  toast('Posted!');
+  if(workoutId&&workoutId!=='null')loadTrainingSchedule();
+  else loadLeaderboard();
 }
 
-// Training chips
-function loadTrainingChips() {
-  const chips = document.getElementById('training-chips');
-  chips.innerHTML = users.map((u, i) =>
-    `<button class="chip ${i===0?'active':''}" onclick="selectTrainingUser('${u.id}',this)">${u.name}</button>`
+// ── TRAINING ─────────────────────────────────────────────────────────────
+function loadTrainingChips(){
+  document.getElementById('training-chips').innerHTML=users.map((u,i)=>
+    `<button class="chip ${i===0?'active':''}" onclick="selUser('${u.id}',this)">${esc(u.name)}</button>`
   ).join('');
-  if (users.length > 0) { selectedTrainingUser = users[0].id; loadTrainingSchedule(); }
+  if(users.length>0){selectedUser=users[0].id;loadTrainingSchedule();}
+}
+function selUser(id,el){
+  document.querySelectorAll('#training-chips .chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');selectedUser=id;loadTrainingSchedule();
+}
+async function loadTrainingSchedule(){
+  if(!selectedUser)return;
+  const[{data:ws},{data:cs}]=await Promise.all([
+    sb.from('workouts').select('*').eq('user_id',selectedUser).order('date'),
+    sb.from('comments').select('*').not('workout_id','is',null)
+  ]);
+  const workouts=ws||[],comments=cs||[];
+  if(!workouts.length){document.getElementById('training-content').innerHTML='<div class="empty">No workouts planned yet.<br>Add one below.</div>';return;}
+  document.getElementById('training-content').innerHTML=workouts.map(w=>wCard(w,comments.filter(c=>c.workout_id===w.id))).join('');
 }
 
-function selectTrainingUser(id, el) {
-  document.querySelectorAll('#training-chips .chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-  selectedTrainingUser = id;
-  loadTrainingSchedule();
-}
-
-async function loadTrainingSchedule() {
-  if (!selectedTrainingUser) return;
-  const { data } = await sb.from('workouts').select('*').eq('user_id', selectedTrainingUser).order('date');
-  const workouts = data || [];
-  if (workouts.length === 0) {
-    document.getElementById('training-content').innerHTML = '<div class="empty">No workouts planned yet.<br>Add one below.</div>';
-    return;
-  }
-  document.getElementById('training-content').innerHTML = workouts.map(w => workoutCard(w)).join('');
-}
-
-function workoutCard(w) {
-  const date = new Date(w.date + 'T00:00:00');
-  const dateStr = date.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
-  const isPast = date < new Date();
-  let tagHtml = '';
-  if (w.status === 'done') tagHtml = `<span class="tag tag-done">Done · ${w.compliance_score || 100}pts</span>`;
-  else if (w.status === 'partial') tagHtml = `<span class="tag tag-partial">Partial · ${w.compliance_score || 50}pts</span>`;
-  else if (w.status === 'missed') tagHtml = `<span class="tag tag-miss">Missed · 0pts</span>`;
-  else tagHtml = `<span class="tag tag-planned">${isPast ? 'Not logged' : 'Planned'}</span>`;
-  
-  const actualRow = (w.actual_km || w.actual_time_min) ?
-    `<div class="wc-row">Actual <span>${w.actual_km ? w.actual_km+'km' : ''} ${w.actual_time_min ? '· '+w.actual_time_min+'min' : ''} ${w.actual_pace ? '· '+w.actual_pace+'/km' : ''}</span></div>` : '';
-  const locationRow = w.location ? `<div class="wc-row" style="font-size:12px; margin-top:2px">${w.location}${w.notes ? ' · '+w.notes : ''}</div>` : '';
-
-  return `<div class="workout-card">
-    <div class="wc-head"><div class="wc-title">${dateStr}</div><div class="wc-type">${w.type || ''}</div></div>
-    <div class="wc-row">Planned <span>${w.planned_km ? w.planned_km+'km' : '—'} ${w.planned_pace ? '@ '+w.planned_pace+'/km' : ''}</span></div>
-    ${actualRow}${locationRow}
-    ${tagHtml}
+function wCard(w,comments=[]){
+  const date=new Date(w.date+'T00:00:00');
+  const ds=date.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+  const isPast=date<new Date();
+  let tag='';
+  if(w.status==='done')tag=`<span class="tag tdone">Done · ${w.compliance_score||100}pts</span>`;
+  else if(w.status==='partial')tag=`<span class="tag tpart">Partial · ${w.compliance_score||50}pts</span>`;
+  else if(w.status==='missed')tag=`<span class="tag tmiss">Missed · 0pts</span>`;
+  else tag=`<span class="tag tplan">${isPast?'Not logged':'Planned'}</span>`;
+  const actRow=(w.actual_km||w.actual_time_min)?`<div class="wcr">Actual <span>${w.actual_km?w.actual_km+'km':''} ${w.actual_time_min?'· '+w.actual_time_min+'min':''} ${w.actual_pace?'· '+w.actual_pace+'/km':''}</span></div>`:'';
+  const locRow=w.location?`<div class="wcr" style="font-size:12px;margin-top:2px">${esc(w.location)}${w.notes?' · '+esc(w.notes):''}</div>`:'';
+  const uOpts=users.map(u=>`<option value="${esc(u.name)}">${esc(u.name)}</option>`).join('');
+  const commHtml=comments.map(c=>`
+    <div class="citem">
+      <div style="width:26px;height:26px;flex-shrink:0">${caricature(c.author_name,26)}</div>
+      <div class="cbubble"><div class="cauthor">${esc(c.author_name)}</div><div class="cmsg">${esc(c.message)}</div></div>
+    </div>`).join('');
+  const wid=w.id;
+  return `<div class="wcard">
+    <div class="wc-inner">
+      <div class="wch"><div class="wct">${ds}</div><div class="wcty">${esc(w.type||'')}</div></div>
+      <div class="wcr">Planned <span>${w.planned_km?w.planned_km+'km':'—'} ${w.planned_pace?'@ '+w.planned_pace+'/km':''}</span></div>
+      ${actRow}${locRow}${tag}
+    </div>
+    <div class="csec">
+      ${commHtml}
+      <div class="cinrow">
+        <select id="csw-${wid}">${uOpts}</select>
+        <input id="cw-${wid}" type="text" placeholder="Comment..." maxlength="140" onkeydown="if(event.key==='Enter')postComment('cw-${wid}','csw-${wid}',null,'${wid}')">
+        <button onclick="postComment('cw-${wid}','csw-${wid}',null,'${wid}')">Send</button>
+      </div>
+    </div>
   </div>`;
 }
 
-// Add planned workout modal
-function openAddWorkout() {
-  populateSelect('plan-runner');
-  setToday('plan-date');
-  document.getElementById('add-workout-modal').classList.add('open');
-}
-function closeModal(e) {
-  if (e.target.classList.contains('modal-overlay')) e.target.classList.remove('open');
-}
-async function savePlan() {
-  const userId = document.getElementById('plan-runner').value;
-  const date = document.getElementById('plan-date').value;
-  const type = document.getElementById('plan-type').value;
-  const km = parseFloat(document.getElementById('plan-km').value) || null;
-  const pace = document.getElementById('plan-pace').value || null;
-  if (!date) { toast('Please select a date'); return; }
-  const { error } = await sb.from('workouts').insert({ user_id: userId, date, type, planned_km: km, planned_pace: pace, status: 'planned' });
-  if (error) { toast('Error saving'); return; }
+// ── ADD WORKOUT MODAL ────────────────────────────────────────────────────
+function openAddWorkout(){popSelect('plan-runner');setToday('plan-date');document.getElementById('add-workout-modal').classList.add('open');}
+function closeModal(e){if(e.target.classList.contains('movl'))e.target.classList.remove('open');}
+async function savePlan(){
+  const uid=document.getElementById('plan-runner').value;
+  const date=document.getElementById('plan-date').value;
+  const type=document.getElementById('plan-type').value;
+  const km=parseFloat(document.getElementById('plan-km').value)||null;
+  const pace=document.getElementById('plan-pace').value||null;
+  if(!date){toast('Pick a date');return;}
+  await sb.from('workouts').insert({user_id:uid,date,type,planned_km:km,planned_pace:pace,status:'planned'});
   document.getElementById('add-workout-modal').classList.remove('open');
-  toast('Workout added!');
-  loadTrainingSchedule();
+  toast('Workout added!');loadTrainingSchedule();
 }
 
-// Log workout
-async function saveWorkout() {
-  const userId = document.getElementById('log-runner').value;
-  const date = document.getElementById('log-date').value;
-  const type = document.getElementById('log-type').value;
-  const km = parseFloat(document.getElementById('log-km').value) || null;
-  const min = parseFloat(document.getElementById('log-min').value) || null;
-  const location = document.getElementById('log-location').value || null;
-  const notes = document.getElementById('log-notes').value || null;
-  if (!date || !km) { toast('Date and distance required'); return; }
-
-  const pace = (km && min) ? (min/km).toFixed(2) : null;
-  const paceStr = pace ? Math.floor(pace) + ':' + String(Math.round((pace%1)*60)).padStart(2,'0') : null;
-
-  // Find matching planned workout
-  const { data: planned } = await sb.from('workouts')
-    .select('*').eq('user_id', userId).eq('date', date).eq('status','planned').limit(1);
-
-  let compliance = 100;
-  let status = 'done';
-  if (planned && planned.length > 0) {
-    const p = planned[0];
-    if (p.planned_km) {
-      const ratio = km / p.planned_km;
-      compliance = Math.min(100, Math.round(ratio * 100));
-      if (compliance < 70) status = 'partial';
-      if (km === 0) status = 'missed';
-    }
-    // Update existing planned workout
-    await sb.from('workouts').update({
-      actual_km: km, actual_time_min: min, actual_pace: paceStr,
-      location, notes, status, compliance_score: compliance
-    }).eq('id', p.id);
+// ── LOG WORKOUT ──────────────────────────────────────────────────────────
+async function saveWorkout(){
+  const uid=document.getElementById('log-runner').value;
+  const date=document.getElementById('log-date').value;
+  const type=document.getElementById('log-type').value;
+  const km=parseFloat(document.getElementById('log-km').value)||null;
+  const min=parseFloat(document.getElementById('log-min').value)||null;
+  const location=document.getElementById('log-location').value||null;
+  const notes=document.getElementById('log-notes').value||null;
+  if(!date||!km){toast('Date and distance required');return;}
+  const pace=(km&&min)?(min/km).toFixed(2):null;
+  const paceStr=pace?Math.floor(pace)+':'+String(Math.round((pace%1)*60)).padStart(2,'0'):null;
+  const{data:planned}=await sb.from('workouts').select('*').eq('user_id',uid).eq('date',date).eq('status','planned').limit(1);
+  let compliance=100,status='done';
+  if(planned&&planned.length>0){
+    const p=planned[0];
+    if(p.planned_km){compliance=Math.min(100,Math.round((km/p.planned_km)*100));if(compliance<70)status='partial';if(km===0)status='missed';}
+    await sb.from('workouts').update({actual_km:km,actual_time_min:min,actual_pace:paceStr,location,notes,status,compliance_score:compliance}).eq('id',p.id);
   } else {
-    // Insert new
-    await sb.from('workouts').insert({
-      user_id: userId, date, type, actual_km: km, actual_time_min: min,
-      actual_pace: paceStr, location, notes, status: 'done', compliance_score: 100
-    });
+    await sb.from('workouts').insert({user_id:uid,date,type,actual_km:km,actual_time_min:min,actual_pace:paceStr,location,notes,status:'done',compliance_score:100});
   }
-
-  toast('Workout saved! Score: ' + compliance);
-  ['log-km','log-min','log-location','log-notes'].forEach(id => document.getElementById(id).value = '');
-  loadRecentLogs();
-  loadLeaderboard();
+  toast('Saved! Score: '+compliance);
+  ['log-km','log-min','log-location','log-notes'].forEach(id=>document.getElementById(id).value='');
+  loadRecentLogs();loadLeaderboard();
 }
-
-async function loadRecentLogs() {
-  const { data } = await sb.from('workouts').select('*, users(name)').neq('status','planned').order('date', {ascending:false}).limit(10);
-  if (!data || data.length === 0) { document.getElementById('recent-logs').innerHTML = '<div class="empty">No logs yet</div>'; return; }
-  document.getElementById('recent-logs').innerHTML = data.map(w => {
-    const date = new Date(w.date + 'T00:00:00').toLocaleDateString('en-GB', {weekday:'short',day:'numeric',month:'short'});
-    const tagClass = w.status === 'done' ? 'tag-done' : w.status === 'partial' ? 'tag-partial' : 'tag-miss';
-    return `<div class="workout-card">
-      <div class="wc-head"><div class="wc-title">${w.users?.name || ''} — ${date}</div><div class="wc-type">${w.type||''}</div></div>
-      <div class="wc-row">${w.actual_km||'—'}km <span>${w.actual_time_min ? w.actual_time_min+'min' : ''} ${w.actual_pace ? '· '+w.actual_pace+'/km' : ''}</span></div>
-      ${w.location ? `<div class="wc-row" style="font-size:12px;color:var(--text-muted)">${w.location}${w.notes?' · '+w.notes:''}</div>` : ''}
-      <span class="tag ${tagClass}">Score: ${w.compliance_score ?? 100}</span>
-    </div>`;
+async function loadRecentLogs(){
+  const{data}=await sb.from('workouts').select('*,users(name)').neq('status','planned').order('date',{ascending:false}).limit(10);
+  if(!data||!data.length){document.getElementById('recent-logs').innerHTML='<div class="empty">No logs yet</div>';return;}
+  document.getElementById('recent-logs').innerHTML=data.map(w=>{
+    const d=new Date(w.date+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+    const tc=w.status==='done'?'tdone':w.status==='partial'?'tpart':'tmiss';
+    return `<div class="wcard"><div class="wc-inner">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+        <div style="width:28px;height:28px;flex-shrink:0">${caricature(w.users?.name||'',28)}</div>
+        <div class="wct">${esc(w.users?.name||'')} — ${d}</div>
+        <div class="wcty">${esc(w.type||'')}</div>
+      </div>
+      <div class="wcr">${w.actual_km||'—'}km <span>${w.actual_time_min?w.actual_time_min+'min':''} ${w.actual_pace?'· '+w.actual_pace+'/km':''}</span></div>
+      ${w.location?`<div class="wcr" style="font-size:12px;color:var(--text-muted)">${esc(w.location)}${w.notes?' · '+esc(w.notes):''}</div>`:''}
+      <span class="tag ${tc}">Score: ${w.compliance_score??100}</span>
+    </div></div>`;
   }).join('');
 }
 
-// Goal calculator
-async function loadGoal() {
-  const uid = document.getElementById('goal-runner').value;
-  const { data } = await sb.from('users').select('goal_hours,goal_minutes').eq('id',uid).single();
-  if (data?.goal_hours) {
-    document.getElementById('goal-h').value = data.goal_hours;
-    document.getElementById('goal-m').value = data.goal_minutes || 0;
-    calcGoal();
-  }
+// ── GOAL ─────────────────────────────────────────────────────────────────
+async function loadGoal(){
+  const uid=document.getElementById('goal-runner').value;
+  const{data}=await sb.from('users').select('goal_hours,goal_minutes').eq('id',uid).single();
+  if(data?.goal_hours){document.getElementById('goal-h').value=data.goal_hours;document.getElementById('goal-m').value=data.goal_minutes||0;calcGoal();}
 }
-
-async function saveGoal() {
-  const uid = document.getElementById('goal-runner').value;
-  const h = parseInt(document.getElementById('goal-h').value) || null;
-  const m = parseInt(document.getElementById('goal-m').value) || 0;
-  await sb.from('users').update({ goal_hours: h, goal_minutes: m }).eq('id', uid);
-  toast('Goal saved!');
-  calcGoal();
+async function saveGoal(){
+  const uid=document.getElementById('goal-runner').value;
+  const h=parseInt(document.getElementById('goal-h').value)||null;
+  const m=parseInt(document.getElementById('goal-m').value)||0;
+  await sb.from('users').update({goal_hours:h,goal_minutes:m}).eq('id',uid);
+  toast('Goal saved!');calcGoal();
 }
-
-function calcGoal() {
-  const h = parseFloat(document.getElementById('goal-h').value) || 3;
-  const m = parseFloat(document.getElementById('goal-m').value) || 45;
-  const totalMin = h * 60 + m;
-  const pacePerKm = totalMin / 42.195;
-  const weeklyKm = parseFloat(document.getElementById('weekly-km').value);
-  const longRun = parseFloat(document.getElementById('long-run').value);
-  const marathon = new Date('2026-09-27');
-  const weeksLeft = Math.floor((marathon - new Date()) / (7*86400000));
-
-  const reqWeekly = totalMin < 210 ? 70 : totalMin < 240 ? 55 : totalMin < 270 ? 45 : 35;
-  const reqLong = totalMin < 210 ? 32 : totalMin < 240 ? 28 : totalMin < 270 ? 25 : 22;
-  const onTrack = weeklyKm >= reqWeekly * 0.85 && longRun >= reqLong * 0.85;
-
-  const paceStr = Math.floor(pacePerKm) + ':' + String(Math.round((pacePerKm % 1) * 60)).padStart(2,'0');
-  const box = document.getElementById('verdict-box');
-  if (onTrack) {
-    box.innerHTML = `<div class="verdict verdict-good"><div class="verdict-title">On track</div><div class="verdict-body">Target pace: ${paceStr}/km · ${weeksLeft} weeks to go. Volume supports your goal. Keep the long run progressing by ~1km/week.</div></div>`;
+function calcGoal(){
+  const h=parseFloat(document.getElementById('goal-h').value)||3;
+  const m=parseFloat(document.getElementById('goal-m').value)||45;
+  const tot=h*60+m,pkm=tot/42.195;
+  const wkm=parseFloat(document.getElementById('weekly-km').value);
+  const lr=parseFloat(document.getElementById('long-run').value);
+  const wl=Math.floor((MDATE-new Date())/(7*86400000));
+  const rw=tot<210?70:tot<240?55:tot<270?45:35;
+  const rl=tot<210?32:tot<240?28:tot<270?25:22;
+  const ok=wkm>=rw*0.85&&lr>=rl*0.85;
+  const ps=Math.floor(pkm)+':'+String(Math.round((pkm%1)*60)).padStart(2,'0');
+  const box=document.getElementById('verdict-box');
+  if(ok){
+    box.innerHTML=`<div class="verd vgood"><div class="vtitle">On track</div><div class="vbody">Target pace: ${ps}/km · ${wl} weeks to go. Volume supports your goal. Progress long run ~1km/week.</div></div>`;
   } else {
-    const gapKm = Math.max(0, Math.round(reqWeekly - weeklyKm));
-    const gapLr = Math.max(0, Math.round(reqLong - longRun));
-    const msg = [];
-    if (gapKm > 0) msg.push(`add ~${gapKm}km/week`);
-    if (gapLr > 0) msg.push(`extend long run to ${reqLong}km`);
-    box.innerHTML = `<div class="verdict verdict-bad"><div class="verdict-title">Not yet on track</div><div class="verdict-body">Target pace: ${paceStr}/km · You need to ${msg.join(' and ')}. ${weeksLeft > 16 ? 'Plenty of time — ramp up gradually.' : weeksLeft > 8 ? 'Focus on consistency now.' : 'Time is tight — prioritize key sessions.'}</div></div>`;
+    const gk=Math.max(0,Math.round(rw-wkm)),gl=Math.max(0,Math.round(rl-lr));
+    const msg=[];if(gk>0)msg.push(`add ~${gk}km/week`);if(gl>0)msg.push(`extend long run to ${rl}km`);
+    box.innerHTML=`<div class="verd vbad"><div class="vtitle">Not yet on track</div><div class="vbody">Target pace: ${ps}/km · ${msg.join(' and ')}. ${wl>16?'Plenty of time — ramp gradually.':wl>8?'Focus on consistency.':'Time is tight — prioritize key sessions.'}</div></div>`;
   }
 }
 
-// Init
-loadUsers();
-setToday('log-date');
-calcGoal();
+// ── XLSX UPLOAD ──────────────────────────────────────────────────────────
+async function handleXlsxUpload(event){
+  const file=event.target.files[0];if(!file)return;
+  const st=document.getElementById('upload-status');
+  st.style.display='block';st.style.color='var(--text-muted)';st.textContent='Reading file...';
+  const reader=new FileReader();
+  reader.onload=async(e)=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});
+      let hi=rows.findIndex(r=>r.some(c=>String(c).toLowerCase().includes('runner_name')));
+      if(hi===-1){st.textContent='Header row not found.';st.style.color='var(--red)';return;}
+      const hdr=rows[hi].map(h=>String(h).trim().toLowerCase());
+      const nc=hdr.indexOf('runner_name'),dc=hdr.indexOf('date'),tc=hdr.indexOf('workout_type'),kc=hdr.indexOf('planned_km'),pc=hdr.indexOf('planned_pace');
+      const drows=rows.slice(hi+2).filter(r=>r[nc]&&r[dc]);
+      if(!drows.length){st.textContent='No data rows found.';st.style.color='var(--amber)';return;}
+      st.textContent=`Found ${drows.length} workouts. Importing...`;
+      let imp=0,skip=0;
+      for(const row of drows){
+        const rn=String(row[nc]).trim();
+        const u=users.find(u=>u.name.toLowerCase()===rn.toLowerCase());
+        if(!u){skip++;continue;}
+        let ds='';const rd=row[dc];
+        if(typeof rd==='number'){const d=XLSX.SSF.parse_date_code(rd);ds=`${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;}
+        else{const pts=String(rd).trim().split(/[\/\-]/);if(pts.length===3){ds=pts[0].length===4?`${pts[0]}-${pts[1].padStart(2,'0')}-${pts[2].padStart(2,'0')}`:`${pts[2]}-${pts[1].padStart(2,'0')}-${pts[0].padStart(2,'0')}`;}}
+        if(!ds){skip++;continue;}
+        await sb.from('workouts').insert({user_id:u.id,date:ds,type:tc>=0?String(row[tc]).trim()||'Easy run':'Easy run',planned_km:parseFloat(row[kc])||null,planned_pace:pc>=0?String(row[pc]).trim()||null:null,status:'planned'});
+        imp++;
+      }
+      st.style.color=imp>0?'var(--teal)':'var(--amber)';
+      st.textContent=`Done! ${imp} imported${skip>0?`, ${skip} skipped`:''}.`;
+      event.target.value='';loadTrainingSchedule();loadLeaderboard();
+    }catch(err){st.style.color='var(--red)';st.textContent='Error: '+err.message;}
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────
+loadUsers();setToday('log-date');calcGoal();
 </script>
 </body>
 </html>
