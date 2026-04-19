@@ -146,11 +146,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
   <div class="chips" id="training-chips"></div>
   <div id="training-content"><div class="loading">Select a runner above</div></div>
   <button class="btn btng" style="margin-top:8px" onclick="openAddWorkout()">+ Add planned workout</button>
-  <div style="margin-top:10px">
-    <input type="file" id="xlsx-upload" accept=".xlsx,.xls" style="display:none" onchange="handleXlsxUpload(event)">
-    <button class="btn btng" style="border-color:#1D9E75;color:#1D9E75" onclick="document.getElementById('xlsx-upload').click()">↑ Upload training plan (.xlsx)</button>
-  </div>
-  <div id="upload-status" style="margin-top:8px;font-size:13px;color:var(--text-muted);display:none"></div>
+  <div id="per-runner-upload" style="margin-top:12px"></div>
 </div>
 
 <div id="log" class="page">
@@ -363,6 +359,7 @@ function showPage(id,btn){
   document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
   document.getElementById(id).classList.add('active');btn.classList.add('active');
   if(id==='board')loadLeaderboard();
+  if(id==='training'){renderUploadButtons();}
   if(id==='log'){loadRecentLogs();setToday('log-date');}
   if(id==='goal')popSelect('goal-runner');
 }
@@ -372,7 +369,7 @@ async function loadUsers(){
   const{data}=await sb.from('users').select('*').order('created_at');
   users=data||[];
   ['log-runner','plan-runner'].forEach(id=>popSelect(id));
-  loadLeaderboard();loadTrainingChips();
+  loadLeaderboard();loadTrainingChips();renderUploadButtons();
 }
 function popSelect(id){
   const el=document.getElementById(id);if(!el)return;
@@ -609,39 +606,58 @@ function calcGoal(){
   }
 }
 
-// ── XLSX UPLOAD ──────────────────────────────────────────────────────────
-async function handleXlsxUpload(event){
+// ── PER-RUNNER UPLOAD BUTTONS ────────────────────────────────────────────
+function renderUploadButtons(){
+  const wrap=document.getElementById('per-runner-upload');
+  if(!wrap||!users.length)return;
+  wrap.innerHTML=`<div class="slbl" style="margin-top:4px">Upload individual plans</div>`+
+    users.map(u=>`
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <div style="width:28px;height:28px;flex-shrink:0">${caricature(u.name,28)}</div>
+        <span style="font-size:13px;font-weight:500;flex:1">${esc(u.name)}</span>
+        <input type="file" id="up-${u.id}" accept=".xlsx,.xls" style="display:none" onchange="handleRunnerUpload(event,'${u.id}','${esc(u.name)}')">
+        <button onclick="document.getElementById('up-${u.id}').click()" style="padding:6px 12px;background:transparent;border:0.5px solid #1D9E75;color:#1D9E75;border-radius:var(--rs);font-size:12px;cursor:pointer;white-space:nowrap;">↑ Upload</button>
+        <span id="upst-${u.id}" style="font-size:11px;color:var(--text-muted);min-width:50px;text-align:right"></span>
+      </div>`
+    ).join('');
+}
+
+async function handleRunnerUpload(event,userId,userName){
   const file=event.target.files[0];if(!file)return;
-  const st=document.getElementById('upload-status');
-  st.style.display='block';st.style.color='var(--text-muted)';st.textContent='Reading file...';
+  const st=document.getElementById(`upst-${userId}`);
+  st.textContent='Reading...';st.style.color='var(--text-muted)';
   const reader=new FileReader();
   reader.onload=async(e)=>{
     try{
       const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
       const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});
-      let hi=rows.findIndex(r=>r.some(c=>String(c).toLowerCase().includes('runner_name')));
-      if(hi===-1){st.textContent='Header row not found.';st.style.color='var(--red)';return;}
+      // find header row — accepts files with or without runner_name column
+      let hi=rows.findIndex(r=>r.some(c=>/date/i.test(String(c))));
+      if(hi===-1){st.textContent='No header';st.style.color='var(--red)';return;}
       const hdr=rows[hi].map(h=>String(h).trim().toLowerCase());
-      const nc=hdr.indexOf('runner_name'),dc=hdr.indexOf('date'),tc=hdr.indexOf('workout_type'),kc=hdr.indexOf('planned_km'),pc=hdr.indexOf('planned_pace');
-      const drows=rows.slice(hi+2).filter(r=>r[nc]&&r[dc]);
-      if(!drows.length){st.textContent='No data rows found.';st.style.color='var(--amber)';return;}
-      st.textContent=`Found ${drows.length} workouts. Importing...`;
-      let imp=0,skip=0;
+      const dc=hdr.findIndex(h=>h.includes('date'));
+      const tc=hdr.findIndex(h=>h.includes('type'));
+      const kc=hdr.findIndex(h=>h.includes('km')||h.includes('dist'));
+      const pc=hdr.findIndex(h=>h.includes('pace'));
+      const drows=rows.slice(hi+1).filter(r=>r[dc]);
+      if(!drows.length){st.textContent='No rows';st.style.color='var(--amber)';return;}
+      let imp=0;
       for(const row of drows){
-        const rn=String(row[nc]).trim();
-        const u=users.find(u=>u.name.toLowerCase()===rn.toLowerCase());
-        if(!u){skip++;continue;}
         let ds='';const rd=row[dc];
         if(typeof rd==='number'){const d=XLSX.SSF.parse_date_code(rd);ds=`${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;}
         else{const pts=String(rd).trim().split(/[\/\-]/);if(pts.length===3){ds=pts[0].length===4?`${pts[0]}-${pts[1].padStart(2,'0')}-${pts[2].padStart(2,'0')}`:`${pts[2]}-${pts[1].padStart(2,'0')}-${pts[0].padStart(2,'0')}`;}}
-        if(!ds){skip++;continue;}
-        await sb.from('workouts').insert({user_id:u.id,date:ds,type:tc>=0?String(row[tc]).trim()||'Easy run':'Easy run',planned_km:parseFloat(row[kc])||null,planned_pace:pc>=0?String(row[pc]).trim()||null:null,status:'planned'});
+        if(!ds)continue;
+        const type=tc>=0?String(row[tc]).trim()||'Easy run':'Easy run';
+        const km=kc>=0?parseFloat(row[kc])||null:null;
+        const pace=pc>=0?String(row[pc]).trim()||null:null;
+        await sb.from('workouts').insert({user_id:userId,date:ds,type,planned_km:km,planned_pace:pace,status:'planned'});
         imp++;
       }
-      st.style.color=imp>0?'var(--teal)':'var(--amber)';
-      st.textContent=`Done! ${imp} imported${skip>0?`, ${skip} skipped`:''}.`;
-      event.target.value='';loadTrainingSchedule();loadLeaderboard();
-    }catch(err){st.style.color='var(--red)';st.textContent='Error: '+err.message;}
+      st.textContent=`${imp} added`;st.style.color='var(--teal)';
+      event.target.value='';
+      if(selectedUser===userId)loadTrainingSchedule();
+      loadLeaderboard();
+    }catch(err){st.textContent='Error';st.style.color='var(--red)';}
   };
   reader.readAsArrayBuffer(file);
 }
