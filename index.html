@@ -144,9 +144,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
 .score-row .lbl{color:var(--tm);}
 .score-row .val{font-weight:600;color:var(--text);}
 .example-tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;margin-left:6px;}
-/* manage tab */
-.manage-filter{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
-.manage-filter select{flex:1;min-width:120px;}
+
 /* login screen */
 .login-screen{position:fixed;inset:0;background:var(--bg2);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;}
 .login-screen.hidden{display:none;}
@@ -175,7 +173,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
 
 <!-- LOGIN SCREEN -->
 <div class="login-screen" id="login-screen">
-  <div class="login-logo">The Boys Berlin Marathon 2026</div>
+  <div class="login-logo">The Boy Berlin Marathon 2026</div>
   <div class="login-sub">Who are you?</div>
 
   <!-- Step 1: pick runner -->
@@ -219,7 +217,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
 
 <div class="hdr">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-    <div><h1>The Boys Berlin Marathon 2026</h1><div class="sub">Track your ragazzi's progress</div></div>
+    <div><h1>The Boy Berlin Marathon 2026</h1><div class="sub">Track your ragazzi's progress</div></div>
     <div id="countdown" style="text-align:right;line-height:1.2;">
       <div id="cd-days" style="font-size:22px;font-weight:700;color:var(--teal);letter-spacing:-0.5px;"></div>
       <div id="cd-time" style="font-size:12px;font-weight:500;color:var(--tm);letter-spacing:0.02em;"></div>
@@ -232,7 +230,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
   <button class="active" onclick="showPage('race',this)">Race</button>
   <button onclick="showPage('board',this)">Board</button>
   <button onclick="showPage('training',this)">Training</button>
-  <button onclick="showPage('manage',this)">Manage</button>
   <button onclick="showPage('log',this)">Log</button>
   <button onclick="showPage('goal',this)">Goal</button>
   <button onclick="showPage('calendar',this)">Calendar</button>
@@ -266,24 +263,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
 </div>
 
 <!-- MANAGE -->
-<div id="manage" class="page">
-  <div class="slbl">Edit or delete workouts</div>
-  <div class="manage-filter">
-    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;flex:1">
-      <div id="manage-user-face" style="width:28px;height:28px;flex-shrink:0"></div>
-      <span style="font-size:13px;font-weight:500" id="manage-user-name"></span>
-    </div>
-    <select id="manage-status" onchange="loadManage()" style="flex:0 0 auto;min-width:120px">
-      <option value="">All statuses</option>
-      <option value="planned">Planned</option>
-      <option value="done">Done</option>
-      <option value="partial">Partial</option>
-      <option value="missed">Missed</option>
-    </select>
-  </div>
-  <div id="manage-content"><div class="loading">Select a runner above</div></div>
-</div>
-
 <!-- LOG -->
 <div id="log" class="page">
   <div class="slbl">Log a completed workout</div>
@@ -514,7 +493,6 @@ function showPage(id,btn){
   if(id==='race')startRace();
   if(id==='board')loadLeaderboard();
   if(id==='training'){renderUploadButtons();}
-  if(id==='manage'){loadManage();}
   if(id==='calendar'){loadCalendar();}
   if(id==='log'){loadRecentLogs();setToday('log-date');setLogType('planned');loadPlannedSessions();}
   if(id==='goal'){loadGoal();}
@@ -532,10 +510,6 @@ async function loadUsers(){
     const nl=document.getElementById('log-user-name');
     if(el)el.innerHTML=caricature(currentUser.name,36);
     if(nl)nl.textContent=currentUser.name;
-    const mf=document.getElementById('manage-user-face');
-    const mn=document.getElementById('manage-user-name');
-    if(mf)mf.innerHTML=caricature(currentUser.name,28);
-    if(mn)mn.textContent=currentUser.name;
   }
 }
 function popSelect(id){
@@ -823,31 +797,6 @@ function wCard(w,comments=[]){
 }
 
 // ── MANAGE TAB ───────────────────────────────────────────────────────────
-async function loadManage(){
-  if(!currentUser)return;
-  const uid=currentUser.id;
-  const status=document.getElementById('manage-status')?.value||'';
-  let q=sb.from('workouts').select('*').eq('user_id',uid).order('date');
-  if(status)q=q.eq('status',status);
-  const{data:ws}=await q;
-  const workouts=ws||[];
-  if(!workouts.length){document.getElementById('manage-content').innerHTML='<div class="empty">No workouts found</div>';return;}
-  document.getElementById('manage-content').innerHTML=workouts.map(w=>{
-    const date=new Date(w.date+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
-    let tagClass=w.status==='done'?'tdone':w.status==='partial'?'tpart':w.status==='missed'?'tmiss':'tplan';
-    return`<div class="wcard"><div class="wc-inner">
-      <div class="wch"><div class="wct">${date}</div><div class="wcty">${esc(w.type||'')}</div></div>
-      <div class="wcr">Planned <span>${w.planned_km?w.planned_km+'km':'—'} ${w.planned_pace?'@ '+w.planned_pace+'/km':''}</span></div>
-      ${(w.actual_km||w.actual_time_min)?`<div class="wcr">Actual <span>${w.actual_km?w.actual_km+'km':''} ${w.actual_time_min?'· '+w.actual_time_min+'min':''}</span></div>`:''}
-      <span class="tag ${tagClass}">${w.status||'planned'}</span>
-      <div class="wc-actions">
-        <button class="edit-btn" onclick="openEditWorkout('${w.id}')">Edit</button>
-        <button class="del-btn" onclick="confirmDelete('${w.id}')">Delete</button>
-      </div>
-    </div></div>`;
-  }).join('');
-}
-
 // ── EDIT / DELETE ────────────────────────────────────────────────────────
 async function openEditWorkout(id){
   const{data:w}=await sb.from('workouts').select('*').eq('id',id).single();
@@ -890,7 +839,7 @@ async function saveWorkoutPlan(){
     toast('Workout added!');
   }
   document.getElementById('workout-modal').classList.remove('open');
-  loadTrainingSchedule();loadManage();
+  loadTrainingSchedule();
 }
 
 async function confirmDelete(id){
@@ -898,7 +847,7 @@ async function confirmDelete(id){
   await sb.from('workouts').delete().eq('id',id);
   toast('Deleted');
   document.getElementById('workout-modal').classList.remove('open');
-  loadTrainingSchedule();loadManage();loadLeaderboard();
+  loadTrainingSchedule();loadLeaderboard();
 }
 async function deleteWorkout(){
   const id=document.getElementById('edit-workout-id').value;
