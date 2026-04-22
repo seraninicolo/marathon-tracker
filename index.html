@@ -145,7 +145,19 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
 .score-row .val{font-weight:600;color:var(--text);}
 .example-tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;margin-left:6px;}
 
-/* login screen */
+/* volume stats */
+.vstat-row{background:var(--bg);border-radius:var(--r);border:0.5px solid var(--bdr);margin-bottom:8px;padding:12px 14px;display:flex;align-items:center;gap:10px;}
+.vstat-rank{font-size:15px;font-weight:600;min-width:18px;color:var(--th);}
+.vstat-rank.r1{color:#BA7517;}.vstat-rank.r2{color:var(--gray);}.vstat-rank.r3{color:#854F0B;}
+.vstat-meta{flex:1;min-width:0;}
+.vstat-name{font-size:14px;font-weight:500;}
+.vstat-nums{display:flex;gap:12px;margin-top:4px;flex-wrap:wrap;}
+.vstat-item{font-size:12px;color:var(--tm);}
+.vstat-item span{font-weight:600;color:var(--text);}
+.vstat-total{text-align:right;}
+.vstat-big{font-size:20px;font-weight:700;color:var(--teal);}
+.vstat-lbl{font-size:10px;color:var(--tm);}
+
 .login-screen{position:fixed;inset:0;background:var(--bg2);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;}
 .login-screen.hidden{display:none;}
 .login-logo{font-size:22px;font-weight:700;color:var(--teal);text-align:center;margin-bottom:4px;}
@@ -246,6 +258,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
 <div id="board" class="page">
   <div class="slbl">Adherence leaderboard</div>
   <div id="leaderboard"><div class="loading">Loading...</div></div>
+  <div class="slbl">Volume stats</div>
+  <div id="km-stats"><div class="loading">Loading...</div></div>
   <div class="slbl">Add runner</div>
   <div class="arr">
     <input id="new-runner-name" placeholder="Name..." maxlength="30">
@@ -567,6 +581,7 @@ async function loadLeaderboard(){
   ]);
   const workouts=wk||[],comments=cm||[];
   const scores=calcScores(workouts);
+  loadKmStats(workouts);
   const rc=['r1','r2','r3'];
   document.getElementById('leaderboard').innerHTML=scores.map((s,i)=>{
     const bc=s.score>=80?'#1D9E75':s.score>=60?'#BA7517':'#E24B4A';
@@ -603,7 +618,37 @@ async function loadLeaderboard(){
   }).join('')||'<div class="empty">No data yet</div>';
 }
 
-// ── RACE ANIMATION ───────────────────────────────────────────────────────
+// ── VOLUME STATS ─────────────────────────────────────────────────────────
+function loadKmStats(workouts){
+  const stats=users.map(u=>{
+    const done=workouts.filter(w=>w.user_id===u.id&&w.actual_km>0);
+    const totalKm=done.reduce((s,w)=>s+(w.actual_km||0),0);
+    const longestRun=done.length?Math.max(...done.map(w=>w.actual_km||0)):0;
+    const withPace=done.filter(w=>w.actual_km>0&&w.actual_time_min>0);
+    const avgPace=withPace.length?withPace.reduce((s,w)=>s+(w.actual_time_min/w.actual_km),0)/withPace.length:null;
+    const paceStr=avgPace?Math.floor(avgPace)+':'+String(Math.round((avgPace%1)*60)).padStart(2,'0'):null;
+    return{u,totalKm,longestRun,paceStr,sessions:done.length};
+  }).sort((a,b)=>b.totalKm-a.totalKm);
+
+  const rc=['r1','r2','r3'];
+  document.getElementById('km-stats').innerHTML=stats.map((s,i)=>`
+    <div class="vstat-row">
+      <div class="vstat-rank ${rc[i]||''}">${i+1}</div>
+      <div style="width:36px;height:36px;flex-shrink:0">${caricature(s.u.name,36)}</div>
+      <div class="vstat-meta">
+        <div class="vstat-name">${esc(s.u.name)}</div>
+        <div class="vstat-nums">
+          <div class="vstat-item">Longest run: <span>${s.longestRun>0?s.longestRun.toFixed(1)+' km':'—'}</span></div>
+          <div class="vstat-item">Avg pace: <span>${s.paceStr?s.paceStr+'/km':'—'}</span></div>
+          <div class="vstat-item">Sessions: <span>${s.sessions}</span></div>
+        </div>
+      </div>
+      <div class="vstat-total">
+        <div class="vstat-big">${s.totalKm.toFixed(1)}</div>
+        <div class="vstat-lbl">km total</div>
+      </div>
+    </div>`).join('')||'<div class="empty">No runs logged yet</div>';
+}
 async function startRace(){
   const[{data:wk},{data:cm}]=await Promise.all([
     sb.from('workouts').select('*'),
